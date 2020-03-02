@@ -31,8 +31,8 @@ import java.util.Spliterators;
 import java.util.function.Consumer;
 
 /**
- * Implementing this interface allows an object to be the target of
- * the "for-each loop" statement. See
+ * 实现此接口使对象成为“ for-each循环”语句的目标。
+ * See
  * <strong>
  * <a href="{@docRoot}/../technotes/guides/language/foreach.html">For-each Loop</a>
  * </strong>
@@ -44,7 +44,7 @@ import java.util.function.Consumer;
  */
 public interface Iterable<T> {
     /**
-     * Returns an iterator over elements of type {@code T}.
+     * 返回类型T的元素上的迭代器。
      *
      * @return an Iterator.
      */

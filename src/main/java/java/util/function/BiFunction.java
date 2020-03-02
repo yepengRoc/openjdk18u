@@ -27,6 +27,7 @@ package java.util.function;
 import java.util.Objects;
 
 /**
+ * 表示一个接收两个参数返回一个结果的功能
  * Represents a function that accepts two arguments and produces a result.
  * This is the two-arity specialization of {@link Function}.
  *

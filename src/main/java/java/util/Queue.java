@@ -142,7 +142,7 @@ public interface Queue<E> extends Collection<E> {
 
     /**
      * 检索并删除此队列的头部，如果此队列为空，则返回null。
-     *
+     * poll 轮询
      * @return the head of this queue, or {@code null} if this queue is empty
      */
     E poll();
@@ -158,7 +158,7 @@ public interface Queue<E> extends Collection<E> {
     /**
      * Retrieves-检索
      *检索但不删除此队列的头部，如果此队列为空，则返回null。
-     *
+     * peek 窥视
      * @return the head of this queue, or {@code null} if this queue is empty
      */
     E peek();

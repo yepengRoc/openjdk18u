@@ -1,28 +1,3 @@
-/*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
 package java.nio;
 
 import java.io.FileDescriptor;
@@ -30,33 +5,22 @@ import sun.misc.Unsafe;
 
 
 /**
- * A direct byte buffer whose content is a memory-mapped region of a file.
+ * 一个直接字节缓冲区，其内容是文件的内存映射区域。
  *
- * <p> Mapped byte buffers are created via the {@link
- * java.nio.channels.FileChannel#map FileChannel.map} method.  This class
- * extends the {@link ByteBuffer} class with operations that are specific to
- * memory-mapped file regions.
+ * <p>映射的字节缓冲区是通过 {@link java.nio.channels.FileChannel#map }FileChannel.map方法创建的。
+ * 此类使用特定于内存映射文件区域的操作扩展了{@link ByteBuffer}ByteBuffer类。
  *
- * <p> A mapped byte buffer and the file mapping that it represents remain
- * valid until the buffer itself is garbage-collected.
+ * <p> 映射的字节缓冲区及其表示的文件映射将保持有效，直到缓冲区本身被垃圾回收为止。
  *
- * <p> The content of a mapped byte buffer can change at any time, for example
- * if the content of the corresponding region of the mapped file is changed by
- * this program or another.  Whether or not such changes occur, and when they
- * occur, is operating-system dependent and therefore unspecified.
+ * <p> 映射的字节缓冲区的内容可以随时更改，例如，如果此程序或其他程序更改了映射文件的相应区域的内容。
+ * 此类更改是否发生以及何时发生，取决于操作系统，因此未指定。
  *
- * <a name="inaccess"></a><p> All or part of a mapped byte buffer may become
- * inaccessible at any time, for example if the mapped file is truncated.  An
- * attempt to access an inaccessible region of a mapped byte buffer will not
- * change the buffer's content and will cause an unspecified exception to be
- * thrown either at the time of the access or at some later time.  It is
- * therefore strongly recommended that appropriate precautions be taken to
- * avoid the manipulation of a mapped file by this program, or by a
- * concurrently running program, except to read or write the file's content.
+ * <a name="inaccess"></a><p> 映射字节缓冲区的全部或部分可能随时无法访问，例如，如果映射文件被截断。
+ * 尝试访问映射的字节缓冲区的不可访问区域将不会更改缓冲区的内容，
+ * 并且将导致在访问时或稍后发生未指定的异常。因此，强烈建议采取适当的预防措施，
+ * 以防止该程序或并发运行的程序对映射文件的操作，除非要读取或写入文件的内容。
  *
- * <p> Mapped byte buffers otherwise behave no differently than ordinary direct
- * byte buffers. </p>
- *
+ * <p> 否则（除此之外），映射的字节缓冲区的行为与普通的直接字节缓冲区没有什么不同。 </p>
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
@@ -71,9 +35,11 @@ public abstract class MappedByteBuffer
     // subclass of DirectByteBuffer, but to keep the spec clear and simple, and
     // for optimization purposes, it's easier to do it the other way around.
     // This works because DirectByteBuffer is a package-private class.
-
+    //这有点倒退：按权利，MappedByteBuffer应该是DirectByteBuffer的一个子类，
+    // 但是为了使规范清晰易懂，并且出于优化目的，反之亦然。 这是有效的，因为DirectByteBuffer是程序包专用的类。
     // For mapped buffers, a FileDescriptor that may be used for mapping
     // operations if valid; null if the buffer is not mapped.
+    // 对于映射的缓冲区，一个FileDescriptor（如果有效）可用于映射操作；如果未映射缓冲区，则为null。
     private final FileDescriptor fd;
 
     // This should only be invoked by the DirectByteBuffer constructors
@@ -126,6 +92,11 @@ public abstract class MappedByteBuffer
      * <p> The returned value is a hint, rather than a guarantee, because the
      * underlying operating system may have paged out some of the buffer's data
      * by the time that an invocation of this method returns.  </p>
+     * <p> 告知此缓冲区的内容是否驻留在物理内存中。
+     * <p> 返回值true表示此缓冲区中的所有数据很有可能驻留在物理内存中，
+     * 因此可以在不引起任何虚拟内存页面错误或I / O操作的情况下进行访问。
+     * 返回值false不一定表示缓冲区的内容未驻留在物理内存中。
+     * <p> 返回的值是提示，而不是保证，因为在此方法的调用返回时，底层操作系统可能已调出缓冲区的某些数据。
      *
      * @return  <tt>true</tt> if it is likely that this buffer's content
      *          is resident in physical memory
@@ -149,6 +120,8 @@ public abstract class MappedByteBuffer
      * this buffer's content is resident in physical memory.  Invoking this
      * method may cause some number of page faults and I/O operations to
      * occur. </p>
+     * <p>将该缓冲区的内容加载到物理内存中。
+     * <p>此方法将尽最大努力确保在返回时该缓冲区的内容驻留在物理内存中。调用此方法可能会导致一定数量的页面错误和I / O操作。
      *
      * @return  This buffer
      */
@@ -189,6 +162,11 @@ public abstract class MappedByteBuffer
      *
      * <p> If the file does not reside on a local device then no such guarantee
      * is made.
+     *  <p> 强制对此缓冲区内容进行的任何更改都将写入包含映射文件的存储设备中。
+     *  <p> 如果映射到此缓冲区的文件位于本地存储设备上，则当此方法返回时，
+     * 可以保证自创建缓冲区以来或对该方法最后一次调用以来对该缓冲区所做的所有更改都已写入该设备。
+     *  <p> 如果文件不在本地设备上，则不做任何保证。
+     *  <p>如果未以读/写模式({@link java.nio.channels.FileChannel.MapMode#READ_WRITE})映射此缓冲区，则调用此方法无效。
      *
      * <p> If this buffer was not mapped in read/write mode ({@link
      * java.nio.channels.FileChannel.MapMode#READ_WRITE}) then invoking this

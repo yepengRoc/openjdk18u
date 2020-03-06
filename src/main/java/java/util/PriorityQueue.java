@@ -29,48 +29,24 @@ import java.util.function.Consumer;
 import sun.misc.SharedSecrets;
 
 /**
- * An unbounded priority {@linkplain Queue queue} based on a priority heap.
- * The elements of the priority queue are ordered according to their
- * {@linkplain Comparable natural ordering}, or by a {@link Comparator}
- * provided at queue construction time, depending on which constructor is
- * used.  A priority queue does not permit {@code null} elements.
- * A priority queue relying on natural ordering also does not permit
- * insertion of non-comparable objects (doing so may result in
- * {@code ClassCastException}).
+ * <p>基于优先级堆的无界优先级队列。根据使用的构造函数，优先级队列的元素根据其自然顺序进行排序，
+ * 或通过在队列构建时提供的Comparator进行排序。优先级队列不允许空元素。
+ * 依赖自然顺序的优先级队列也不允许插入不可比较的对象（这样做可能会导致ClassCastException）。
  *
- * <p>The <em>head</em> of this queue is the <em>least</em> element
- * with respect to the specified ordering.  If multiple elements are
- * tied for least value, the head is one of those elements -- ties are
- * broken arbitrarily.  The queue retrieval operations {@code poll},
- * {@code remove}, {@code peek}, and {@code element} access the
- * element at the head of the queue.
+ * <p>就指定的顺序而言，此队列的头是最小的元素。如果多个元素的价值最小，
+ * 那么头就是那些元素之一-关系被任意打破。队列检索操作轮询，删除，查看和访问元素，该访问元素位于队列的开头。
  *
- * <p>A priority queue is unbounded, but has an internal
- * <i>capacity</i> governing the size of an array used to store the
- * elements on the queue.  It is always at least as large as the queue
- * size.  As elements are added to a priority queue, its capacity
- * grows automatically.  The details of the growth policy are not
- * specified.
+ * <p>优先级队列是无界的，但是具有内部容量来控制用于在队列上存储元素的数组的大小。
+ * 它总是至少与队列大小一样大。将元素添加到优先级队列时，其容量会自动增长。未指定增长政策的详细信息。
  *
- * <p>This class and its iterator implement all of the
- * <em>optional</em> methods of the {@link Collection} and {@link
- * Iterator} interfaces.  The Iterator provided in method {@link
- * #iterator()} is <em>not</em> guaranteed to traverse the elements of
- * the priority queue in any particular order. If you need ordered
- * traversal, consider using {@code Arrays.sort(pq.toArray())}.
+ * <p>此类及其迭代器实现Collection和Iterator接口的所有可选方法。不保证方法iterator（）
+ * 中提供的Iterator以任何特定顺序遍历优先级队列的元素。如果需要有序遍历，请考虑使用Arrays.sort（pq.toArray（））。
  *
- * <p><strong>Note that this implementation is not synchronized.</strong>
- * Multiple threads should not access a {@code PriorityQueue}
- * instance concurrently if any of the threads modifies the queue.
- * Instead, use the thread-safe {@link
- * java.util.concurrent.PriorityBlockingQueue} class.
+ * <p>请注意，此实现未同步。如果任何线程修改了队列，则多个线程不应同时访问PriorityQueue实例。而是使用线程安全的{@link
+ *  * java.util.concurrent.PriorityBlockingQueue} 类。
  *
- * <p>Implementation note: this implementation provides
- * O(log(n)) time for the enqueuing and dequeuing methods
- * ({@code offer}, {@code poll}, {@code remove()} and {@code add});
- * linear time for the {@code remove(Object)} and {@code contains(Object)}
- * methods; and constant time for the retrieval methods
- * ({@code peek}, {@code element}, and {@code size}).
+ * <p>实施注意事项：此实现为入队和出队方法（优惠，轮询，remove（）和添加）提供O（log（n））
+ * 时间；remove（Object）和contains（Object）方法的线性时间；和固定时间的检索方法（窥视，元素和大小）。
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
@@ -88,12 +64,14 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     private static final int DEFAULT_INITIAL_CAPACITY = 11;
 
     /**
-     * Priority queue represented as a balanced binary heap: the two
-     * children of queue[n] are queue[2*n+1] and queue[2*(n+1)].  The
-     * priority queue is ordered by comparator, or by the elements'
-     * natural ordering, if comparator is null: For each node n in the
-     * heap and each descendant d of n, n <= d.  The element with the
-     * lowest value is in queue[0], assuming the queue is nonempty.
+     *
+     * 优先队列表示为平衡的二进制堆：两者
+     * queue [n]的子级是queue [2 * n + 1]和queue [2 *（n + 1）]。
+     * 的
+     * 优先级队列由比较器或元素的
+     * 自然顺序（如果比较器为null）：对于
+     * 堆和每个后代d为n，n <= d。
+     * 具有元素假定队列为非空，则最小值在queue [0]中。
      */
     transient Object[] queue; // non-private to simplify nested class access
 
@@ -324,7 +302,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
 
     /**
      * Inserts the specified element into this priority queue.
-     *
+     *插入指定元素到优先级队列
      * @return {@code true} (as specified by {@link Queue#offer})
      * @throws ClassCastException if the specified element cannot be
      *         compared with elements currently in this priority queue
@@ -642,7 +620,7 @@ public class PriorityQueue<E> extends AbstractQueue<E>
      * @param x the item to insert
      */
     private void siftUp(int k, E x) {
-        if (comparator != null)
+        if (comparator != null)//如果设置了比较器
             siftUpUsingComparator(k, x);
         else
             siftUpComparable(k, x);
@@ -663,9 +641,12 @@ public class PriorityQueue<E> extends AbstractQueue<E>
     }
 
     @SuppressWarnings("unchecked")
+    /**
+     * 默认是一个小顶堆
+     */
     private void siftUpUsingComparator(int k, E x) {
         while (k > 0) {
-            int parent = (k - 1) >>> 1;
+            int parent = (k - 1) >>> 1;//右移取整刚好是父节点的位置
             Object e = queue[parent];
             if (comparator.compare(x, (E) e) >= 0)
                 break;

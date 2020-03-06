@@ -36,22 +36,12 @@
 package java.util;
 
 /**
- * This class provides skeletal implementations of some {@link Queue}
- * operations. The implementations in this class are appropriate when
- * the base implementation does <em>not</em> allow <tt>null</tt>
- * elements.  Methods {@link #add add}, {@link #remove remove}, and
- * {@link #element element} are based on {@link #offer offer}, {@link
- * #poll poll}, and {@link #peek peek}, respectively, but throw
- * exceptions instead of indicating failure via <tt>false</tt> or
- * <tt>null</tt> returns.
+ * 此类提供了一些Queue操作的基本实现。当基本实现不允许空元素时，此类中的实现是合适的。
+ * 方法add，remove和element分别基于offer，poll和peek，但是抛出异常而不是通过false或null返回指示失败。
  *
- * <p>A <tt>Queue</tt> implementation that extends this class must
- * minimally define a method {@link Queue#offer} which does not permit
- * insertion of <tt>null</tt> elements, along with methods {@link
- * Queue#peek}, {@link Queue#poll}, {@link Collection#size}, and
- * {@link Collection#iterator}.  Typically, additional methods will be
- * overridden as well.  If these requirements cannot be met, consider
- * instead subclassing {@link AbstractCollection}.
+ * <p>扩展此类的Queue实现必须最少定义一个不允许插入空元素的Queue.offer（E）方法，
+ * 以及Queue.peek（），Queue.poll（），Collection.size（）和Collection方法.iterator（）。
+ * 通常，其他方法也会被覆盖。如果不能满足这些要求，请考虑将AbstractCollection子类化。
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">

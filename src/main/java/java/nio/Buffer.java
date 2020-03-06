@@ -28,143 +28,85 @@ package java.nio;
 import java.util.Spliterator;
 
 /**
- * A container for data of a specific primitive type.
+ * 特定原始类型数据的容器。
  *
- * <p> A buffer is a linear, finite sequence of elements of a specific
- * primitive type.  Aside from its content, the essential properties of a
- * buffer are its capacity, limit, and position: </p>
+ * <p>缓冲区是特定原始类型的元素的线性有限序列。除了其内容之外，缓冲区的基本属性还包括其capacity,limit和 position：
  *
  * <blockquote>
+ *   <p> 缓冲区的capacity是它包含的元素数量。缓冲区的capacity永远不会为负，也不会改变。
  *
- *   <p> A buffer's <i>capacity</i> is the number of elements it contains.  The
- *   capacity of a buffer is never negative and never changes.  </p>
+ *   <p> 缓冲区的limit是不应读取或写入的第一个元素的索引。缓冲区的limit永远不会为负，也永远不会大于缓冲区的容量。
  *
- *   <p> A buffer's <i>limit</i> is the index of the first element that should
- *   not be read or written.  A buffer's limit is never negative and is never
- *   greater than its capacity.  </p>
- *
- *   <p> A buffer's <i>position</i> is the index of the next element to be
- *   read or written.  A buffer's position is never negative and is never
- *   greater than its limit.  </p>
+ *   <p> 缓冲区的position是下一个要读取或写入的元素的索引。缓冲区的position永远不会为负，也不会大于其limit。 </p>
  *
  * </blockquote>
  *
- * <p> There is one subclass of this class for each non-boolean primitive type.
+ * <p> 对于每个非布尔基本类型，此类都有一个子类。
  *
+ * <h2> Transferring data </h2>传输数据
  *
- * <h2> Transferring data </h2>
- *
- * <p> Each subclass of this class defines two categories of <i>get</i> and
- * <i>put</i> operations: </p>
+ * <p>此类的每个子类定义了get和put操作的两类： </p>
  *
  * <blockquote>
  *
- *   <p> <i>Relative</i> operations read or write one or more elements starting
- *   at the current position and then increment the position by the number of
- *   elements transferred.  If the requested transfer exceeds the limit then a
- *   relative <i>get</i> operation throws a {@link BufferUnderflowException}
- *   and a relative <i>put</i> operation throws a {@link
- *   BufferOverflowException}; in either case, no data is transferred.  </p>
+ *   <p> 相对操作从当前位置开始读取或写入一个或多个元素，然后将该位置增加所传送元素的数量。
+ *   如果请求的传输超出限制limit，则相对的get操作将引发BufferUnderflowException，
+ *   而相对的put操作将引发BufferOverflowException；无论哪种情况，都不会传输数据。
  *
- *   <p> <i>Absolute</i> operations take an explicit element index and do not
- *   affect the position.  Absolute <i>get</i> and <i>put</i> operations throw
- *   an {@link IndexOutOfBoundsException} if the index argument exceeds the
- *   limit.  </p>
+ *   <p>绝对运算采用显式元素索引，并且不影响位置。如果index参数超出限制limit，则绝对的get和put操作将引发IndexOutOfBoundsException。
  *
  * </blockquote>
+ * <p> 当然，也可以通过始终相对于当前位置的适当通道的I / O操作将数据移入或移出缓冲区。
  *
- * <p> Data may also, of course, be transferred in to or out of a buffer by the
- * I/O operations of an appropriate channel, which are always relative to the
- * current position.
+ * <h2> Marking and resetting </h2>标记和重置
  *
+ * <p>  缓冲区的标记是在调用{@link #reset} reset方法时将其位置重置到的索引。
+ * 标记并非总是定义的，但是定义时，它永远不会为负，也永远不会大于position。
+ * 如果定义了标记，则在将位置或限制调整为小于标记的值时将其丢弃。如果未定义标记，
+ * 则调用{@link #reset}reset方法将引发InvalidMarkException。
  *
- * <h2> Marking and resetting </h2>
- *
- * <p> A buffer's <i>mark</i> is the index to which its position will be reset
- * when the {@link #reset reset} method is invoked.  The mark is not always
- * defined, but when it is defined it is never negative and is never greater
- * than the position.  If the mark is defined then it is discarded when the
- * position or the limit is adjusted to a value smaller than the mark.  If the
- * mark is not defined then invoking the {@link #reset reset} method causes an
- * {@link InvalidMarkException} to be thrown.
- *
- *
- * <h2> Invariants </h2>
- *
- * <p> The following invariant holds for the mark, position, limit, and
- * capacity values:
- *
+ * <h2> Invariants </h2>不变量
+ * <p>对于mark，position，limit和capacity，以下不变式成立：
  * <blockquote>
- *     <tt>0</tt> <tt>&lt;=</tt>
- *     <i>mark</i> <tt>&lt;=</tt>
- *     <i>position</i> <tt>&lt;=</tt>
- *     <i>limit</i> <tt>&lt;=</tt>
- *     <i>capacity</i>
+ *    0 <= mark <= position <= limit <= capacity
  * </blockquote>
  *
- * <p> A newly-created buffer always has a position of zero and a mark that is
- * undefined.  The initial limit may be zero, or it may be some other value
- * that depends upon the type of the buffer and the manner in which it is
- * constructed.  Each element of a newly-allocated buffer is initialized
- * to zero.
+ * <p> 新创建的缓冲区始终具有零位置和未定义的标记。
+ * 初始limit可以为零，也可以是其他一些值，具体取决于缓冲区的类型及其构造方式。
+ * 新分配的缓冲区的每个元素都初始化为零。
  *
  *
- * <h2> Clearing, flipping, and rewinding </h2>
+ * <h2> Clearing, flipping, and rewinding </h2>清除，翻转和倒带
  *
- * <p> In addition to methods for accessing the position, limit, and capacity
- * values and for marking and resetting, this class also defines the following
- * operations upon buffers:
- *
+ * <p> 除了访问position，limit和capacity值以及标记和重置的方法之外，此类还定义了以下对缓冲区的操作：
  * <ul>
- *
- *   <li><p> {@link #clear} makes a buffer ready for a new sequence of
- *   channel-read or relative <i>put</i> operations: It sets the limit to the
- *   capacity and the position to zero.  </p></li>
- *
- *   <li><p> {@link #flip} makes a buffer ready for a new sequence of
- *   channel-write or relative <i>get</i> operations: It sets the limit to the
- *   current position and then sets the position to zero.  </p></li>
- *
- *   <li><p> {@link #rewind} makes a buffer ready for re-reading the data that
- *   it already contains: It leaves the limit unchanged and sets the position
- *   to zero.  </p></li>
- *
+ *   <li><p>{@link #clear} 使缓冲区为新的通道读取或相对放置操作序列做好准备：将limit设置为capacity，并将position设置为零。 </p></li>
+ *   <li><p>{@link #flip} 使缓冲区为新的通道写入或相对get操作序列做好准备：它将limit设置为当前position ，然后将position 设置为零 </p></li>
+ *   <li><p> {@link #rewind}使缓冲区准备好重新读取它已经包含的数据：保留limit不变，并将position设置为零。 </p></li>
  * </ul>
  *
+ * <h2> Read-only buffers </h2>只读缓冲区
  *
- * <h2> Read-only buffers </h2>
+ * <p>每个缓冲区都是可读的，但并非每个缓冲区都是可写的。每个缓冲区类的变异方法都指定为可选操作，
+ * 当对只读缓冲区调用时，该方法将引发ReadOnlyBufferException。只读缓冲区不允许更改其内容，
+ * 但其标记，位置和限制值是可变的。缓冲区是否为只读可以通过调用isReadOnly方法来确定。
  *
- * <p> Every buffer is readable, but not every buffer is writable.  The
- * mutation methods of each buffer class are specified as <i>optional
- * operations</i> that will throw a {@link ReadOnlyBufferException} when
- * invoked upon a read-only buffer.  A read-only buffer does not allow its
- * content to be changed, but its mark, position, and limit values are mutable.
- * Whether or not a buffer is read-only may be determined by invoking its
- * {@link #isReadOnly isReadOnly} method.
+ * <h2> Thread safety </h2>线程安全
+ * <p>缓冲区不能安全用于多个并发线程。如果一个缓冲区将由多个线程使用，则应通过适当的同步来控制对该缓冲区的访问。
  *
+ * <h2> Invocation chaining </h2>调用链
  *
- * <h2> Thread safety </h2>
- *
- * <p> Buffers are not safe for use by multiple concurrent threads.  If a
- * buffer is to be used by more than one thread then access to the buffer
- * should be controlled by appropriate synchronization.
- *
- *
- * <h2> Invocation chaining </h2>
- *
- * <p> Methods in this class that do not otherwise have a value to return are
- * specified to return the buffer upon which they are invoked.  This allows
- * method invocations to be chained; for example, the sequence of statements
- *
+ * <p> 此类中没有其他要返回值的方法被指定为返回在其上调用它们的缓冲区。这使得方法调用可以链接在一起；
+ * 例如，语句序列
  * <blockquote><pre>
  * b.flip();
  * b.position(23);
  * b.limit(42);</pre></blockquote>
  *
- * can be replaced by the single, more compact statement
- *
+ * 可以用一个更紧凑的语句代替
  * <blockquote><pre>
- * b.flip().position(23).limit(42);</pre></blockquote>
+ * b.flip().position(23).limit(42);
+ * </pre></blockquote>
  *
  *
  * @author Mark Reinhold

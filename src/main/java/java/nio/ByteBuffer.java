@@ -1,257 +1,90 @@
-/*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-// -- This file was mechanically generated: Do not edit! -- //
-
 package java.nio;
 
-
-
-
-
-
-
-
-
-
 /**
- * A byte buffer.
  *
- * <p> This class defines six categories of operations upon
- * byte buffers:
+ *  <p> 字节缓冲区。
+ *  <p> 此类定义了对字节缓冲区的六种操作类别：
+ *   <ul>
+ *  <li>读取{@link #get()}和写入{@link #put(byte)}单个字节的绝对和相对的get和put方法；
+ *  <li>相对批量获取{@link #get(byte[]) }方法，用于将字节的连续序列从此缓冲区传输到数组中；
+ *  <li>相对批量放置{@link #put(byte[])}方法，用于将字节数组或某些其他字节缓冲区中连续的字节序列传输到此缓冲区中；
+ *  <li>绝对和相对的get{@link #getChar()}和put{@link #putChar(char)} 方法，用于读取和写入其他原始类型的值，并将它们以特定字节顺序在字节序列之间来回转换；
+ *  <li>创建视图缓冲区的方法，该方法允许将字节缓冲区视为包含某些其他原始类型值的缓冲区；
+ *  <li>和压缩 {@link #compact}，复制{@link#duplicate}和切片{@link #slice}字节缓冲区的方法。
  *
- * <ul>
- *
- *   <li><p> Absolute and relative {@link #get() <i>get</i>} and
- *   {@link #put(byte) <i>put</i>} methods that read and write
- *   single bytes; </p></li>
- *
- *   <li><p> Relative {@link #get(byte[]) <i>bulk get</i>}
- *   methods that transfer contiguous sequences of bytes from this buffer
- *   into an array; </p></li>
- *
- *   <li><p> Relative {@link #put(byte[]) <i>bulk put</i>}
- *   methods that transfer contiguous sequences of bytes from a
- *   byte array or some other byte
- *   buffer into this buffer; </p></li>
- *
-
- *
- *   <li><p> Absolute and relative {@link #getChar() <i>get</i>}
- *   and {@link #putChar(char) <i>put</i>} methods that read and
- *   write values of other primitive types, translating them to and from
- *   sequences of bytes in a particular byte order; </p></li>
- *
- *   <li><p> Methods for creating <i><a href="#views">view buffers</a></i>,
- *   which allow a byte buffer to be viewed as a buffer containing values of
- *   some other primitive type; and </p></li>
- *
-
- *
- *   <li><p> Methods for {@link #compact compacting}, {@link
- *   #duplicate duplicating}, and {@link #slice slicing}
- *   a byte buffer.  </p></li>
- *
- * </ul>
- *
- * <p> Byte buffers can be created either by {@link #allocate
- * <i>allocation</i>}, which allocates space for the buffer's
- *
-
- *
- * content, or by {@link #wrap(byte[]) <i>wrapping</i>} an
- * existing byte array  into a buffer.
- *
-
-
-
-
-
-
-
- *
-
+ *  <p>字节缓冲区可以通过分配{@link #allocate}（为缓冲区内容分配空间）来创建，
+ *  也可以通过将现有的字节数组包装{@link #wrap(byte[])}到缓冲区中来创建。
  *
  * <a name="direct"></a>
  * <h2> Direct <i>vs.</i> non-direct buffers </h2>
+ * 直接与非直接缓冲区
  *
- * <p> A byte buffer is either <i>direct</i> or <i>non-direct</i>.  Given a
- * direct byte buffer, the Java virtual machine will make a best effort to
- * perform native I/O operations directly upon it.  That is, it will attempt to
- * avoid copying the buffer's content to (or from) an intermediate buffer
- * before (or after) each invocation of one of the underlying operating
- * system's native I/O operations.
+ * <p> 字节缓冲区可以是直接的，也可以是非直接的。给定直接字节缓冲区，
+ * Java虚拟机将尽最大努力直接在其上执行本机I / O操作。也就是说，
+ * 它将尝试避免在每次调用底层操作系统的本机I / O操作之前（或之后）将缓冲区的内容复制到中间缓冲区（或从中间缓冲区复制）。
  *
- * <p> A direct byte buffer may be created by invoking the {@link
- * #allocateDirect(int) allocateDirect} factory method of this class.  The
- * buffers returned by this method typically have somewhat higher allocation
- * and deallocation costs than non-direct buffers.  The contents of direct
- * buffers may reside outside of the normal garbage-collected heap, and so
- * their impact upon the memory footprint of an application might not be
- * obvious.  It is therefore recommended that direct buffers be allocated
- * primarily for large, long-lived buffers that are subject to the underlying
- * system's native I/O operations.  In general it is best to allocate direct
- * buffers only when they yield a measureable gain in program performance.
+ * <p> 可以通过调用此类的allocateDirect{@link #allocateDirect(int)}工厂方法来创建直接字节缓冲区。
+ * 这种方法返回的缓冲区通常比非直接缓冲区具有更高的分配和释放成本。
+ * 直接缓冲区的内容可能驻留在普通垃圾回收堆的外部，因此它们对应用程序内存占用的影响可能并不明显。
+ * 因此，建议直接缓冲区主要分配给大型，寿命长的缓冲区，这些缓冲区要受基础系统的本机I / O操作的约束。
+ * 通常，最好仅在直接缓冲区产生可衡量的程序性能提升时才分配它们。
  *
- * <p> A direct byte buffer may also be created by {@link
- * java.nio.channels.FileChannel#map mapping} a region of a file
- * directly into memory.  An implementation of the Java platform may optionally
- * support the creation of direct byte buffers from native code via JNI.  If an
- * instance of one of these kinds of buffers refers to an inaccessible region
- * of memory then an attempt to access that region will not change the buffer's
- * content and will cause an unspecified exception to be thrown either at the
- * time of the access or at some later time.
+ * <p> 直接字节缓冲区也可以通过将文件的区域直接映射 {@link java.nio.channels.FileChannel#map }到内存中来创建。
+ * Java平台的实现可以选择支持通过JNI从本机代码创建直接字节缓冲区。如果这些缓冲区之一的实例引用了内存的不可访问区域，
+ * 则尝试访问该区域将不会更改缓冲区的内容，并且将导致在访问时或稍后发生未指定的异常。时间。
  *
- * <p> Whether a byte buffer is direct or non-direct may be determined by
- * invoking its {@link #isDirect isDirect} method.  This method is provided so
- * that explicit buffer management can be done in performance-critical code.
- *
+ * <p> 字节缓冲区是直接还是非直接缓冲区可以通过调用其{@link #isDirect}isDirect方法来确定。
+ * 提供此方法是为了可以在性能关键代码中完成显式缓冲区管理。
  *
  * <a name="bin"></a>
  * <h2> Access to binary data </h2>
+ *访问二进制数据
+ * <p>  此类定义用于读取和写入除布尔值以外的所有其他基本类型的值的方法。
+ * 根据缓冲区的当前字节顺序将原始值转换为字节序列（或从字节序列转换为字节序列），可以通过{@link #order}order方法进行检索和修改。
+ * 特定的字节顺序由ByteOrder{@link ByteOrder}类的实例表示。
+ * 字节缓冲区的初始顺序始终为BIG_ENDIAN{@link ByteOrder#BIG_ENDIAN BIG_ENDIAN}。
  *
- * <p> This class defines methods for reading and writing values of all other
- * primitive types, except <tt>boolean</tt>.  Primitive values are translated
- * to (or from) sequences of bytes according to the buffer's current byte
- * order, which may be retrieved and modified via the {@link #order order}
- * methods.  Specific byte orders are represented by instances of the {@link
- * ByteOrder} class.  The initial order of a byte buffer is always {@link
- * ByteOrder#BIG_ENDIAN BIG_ENDIAN}.
- *
- * <p> For access to heterogeneous binary data, that is, sequences of values of
- * different types, this class defines a family of absolute and relative
- * <i>get</i> and <i>put</i> methods for each type.  For 32-bit floating-point
- * values, for example, this class defines:
- *
+ * <p> 为了访问异构二进制数据（即不同类型的值的序列），此类定义了每种类型的绝对和相对get和put方法的族。
+ * 例如，对于32位浮点值，此类定义：
  * <blockquote><pre>
  * float  {@link #getFloat()}
  * float  {@link #getFloat(int) getFloat(int index)}
  *  void  {@link #putFloat(float) putFloat(float f)}
  *  void  {@link #putFloat(int,float) putFloat(int index, float f)}</pre></blockquote>
  *
- * <p> Corresponding methods are defined for the types <tt>char</tt>,
- * <tt>short</tt>, <tt>int</tt>, <tt>long</tt>, and <tt>double</tt>.  The index
- * parameters of the absolute <i>get</i> and <i>put</i> methods are in terms of
- * bytes rather than of the type being read or written.
+ * <p> 为char，short，int，long和double类型定义了相应的方法。
+ * 绝对get和put方法的索引参数以字节为单位，而不是读取或写入的类型。
  *
  * <a name="views"></a>
  *
- * <p> For access to homogeneous binary data, that is, sequences of values of
- * the same type, this class defines methods that can create <i>views</i> of a
- * given byte buffer.  A <i>view buffer</i> is simply another buffer whose
- * content is backed by the byte buffer.  Changes to the byte buffer's content
- * will be visible in the view buffer, and vice versa; the two buffers'
- * position, limit, and mark values are independent.  The {@link
- * #asFloatBuffer() asFloatBuffer} method, for example, creates an instance of
- * the {@link FloatBuffer} class that is backed by the byte buffer upon which
- * the method is invoked.  Corresponding view-creation methods are defined for
- * the types <tt>char</tt>, <tt>short</tt>, <tt>int</tt>, <tt>long</tt>, and
- * <tt>double</tt>.
+ * <p> 为了访问同类的二进制数据（即相同类型的值的序列），此类定义了可以创建给定字节缓冲区的视图的方法。
+ * 视图缓冲区只是另一个缓冲区，其内容由字节缓冲区支持。对字节缓冲区内容的更改将在视图缓冲区中可见，
+ * 反之亦然；两个缓冲区的位置，限制和标记值是独立的。
+ * 例如，{@link #asFloatBuffer()}asFloatBuffer方法创建{@link FloatBuffer}FloatBuffer类的实例，
+ * 该实例由在其上调用该方法的字节缓冲区支持。为char，short，int，long和double类型定义了相应的视图创建方法。
  *
- * <p> View buffers have three important advantages over the families of
- * type-specific <i>get</i> and <i>put</i> methods described above:
- *
+ * <p> 与上述类型特定的get和put方法系列相比，视图缓冲区具有三个重要优点：
  * <ul>
- *
- *   <li><p> A view buffer is indexed not in terms of bytes but rather in terms
- *   of the type-specific size of its values;  </p></li>
- *
- *   <li><p> A view buffer provides relative bulk <i>get</i> and <i>put</i>
- *   methods that can transfer contiguous sequences of values between a buffer
- *   and an array or some other buffer of the same type; and  </p></li>
- *
- *   <li><p> A view buffer is potentially much more efficient because it will
- *   be direct if, and only if, its backing byte buffer is direct.  </p></li>
- *
+ *   <li><p>视图缓冲区的索引不是以字节为单位，而是根据其值的特定于类型的大小进行索引。</p></li>
+ *   <li><p>视图缓冲区提供相对的批量获取和放置方法，这些方法可以在缓冲区与数组或同一类型的其他缓冲区之间传输连续的值序列；和</p></li>
+ *   <li><p> 视图缓冲区可能会更有效，因为只有当其后备字节缓冲区是直接的时，视图缓冲区才是直接的。</p></li>
  * </ul>
  *
- * <p> The byte order of a view buffer is fixed to be that of its byte buffer
- * at the time that the view is created.  </p>
+ * <p>视图缓冲区的字节顺序固定为创建视图时其字节缓冲区的字节顺序。  </p>
  *
-
-*
-
-
-
-
-
-
-
-
-
-
-
-*
-
-
-
-
-
-
-
-
- *
-
  * <h2> Invocation chaining </h2>
-
+ * 调用链
  *
- * <p> Methods in this class that do not otherwise have a value to return are
- * specified to return the buffer upon which they are invoked.  This allows
- * method invocations to be chained.
- *
-
- *
- * The sequence of statements
- *
+ * <p> 此类中没有其他要返回值的方法被指定为返回在其上调用它们的缓冲区。这使方法调用可以链接在一起。
+ * 语句顺序
  * <blockquote><pre>
  * bb.putInt(0xCAFEBABE);
  * bb.putShort(3);
  * bb.putShort(45);</pre></blockquote>
  *
- * can, for example, be replaced by the single statement
- *
+ * 例如，可以用单个语句代替
  * <blockquote><pre>
  * bb.putInt(0xCAFEBABE).putShort(3).putShort(45);</pre></blockquote>
- *
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
  *
  *
  * @author Mark Reinhold
@@ -267,14 +100,15 @@ public abstract class ByteBuffer
     // These fields are declared here rather than in Heap-X-Buffer in order to
     // reduce the number of virtual method invocations needed to access these
     // values, which is especially costly when coding small buffers.
-    //
-    final byte[] hb;                  // Non-null only for heap buffers
+    //这些字段在此处而不是在Heap-X-Buffer中声明，以便减少访问这些值所需的虚拟方法调用的次数，
+    // 在编码小型缓冲区时，这特别昂贵。
+    final byte[] hb;                  // Non-null only for heap buffers 非空的堆缓冲区
     final int offset;
-    boolean isReadOnly;                 // Valid only for heap buffers
+    boolean isReadOnly;                 // Valid only for heap buffers  只对堆缓冲区有效
 
     // Creates a new buffer with the given mark, position, limit, capacity,
     // backing array, and array offset
-    //
+    //创建一个具有给定标记，位置，限制，容量，支持数组和数组偏移量的新缓冲区
     ByteBuffer(int mark, int pos, int lim, int cap,   // package-private
                  byte[] hb, int offset)
     {
@@ -298,6 +132,9 @@ public abstract class ByteBuffer
      * capacity, its mark will be undefined, and each of its elements will be
      * initialized to zero.  Whether or not it has a
      * {@link #hasArray backing array} is unspecified.
+     * 分配一个新的直接字节缓冲区。
+     * 新缓冲区的position将为零，其limit将是其容量，其mark将是未定义的，
+     * 并且其每个元素都将初始化为零。不确定是否具有支持数组。
      *
      * @param  capacity
      *         The new buffer's capacity, in bytes
@@ -320,7 +157,9 @@ public abstract class ByteBuffer
      * capacity, its mark will be undefined, and each of its elements will be
      * initialized to zero.  It will have a {@link #array backing array},
      * and its {@link #arrayOffset array offset} will be zero.
-     *
+     *分配一个新的字节缓冲区。
+     * 新缓冲区的位置将为零，其极限将是其容量，其标记将是未定义的，
+     * 并且其每个元素都将初始化为零。它将有一个支持数组，其数组偏移量将为零。
      * @param  capacity
      *         The new buffer's capacity, in bytes
      *
@@ -345,7 +184,10 @@ public abstract class ByteBuffer
      * will be <tt>offset + length</tt>, and its mark will be undefined.  Its
      * {@link #array backing array} will be the given array, and
      * its {@link #arrayOffset array offset} will be zero.  </p>
-     *
+     *  将字节数组包装到缓冲区中。
+     * 新缓冲区将由给定的字节数组支持；也就是说，对缓冲区的修改将导致数组被修改，
+     * 反之亦然。新缓冲区的容量将为array.length，其位置将偏移，其限制将为offset + length，
+     * 并且其标记将不确定。它的支持数组将是给定的数组，其数组偏移量将为零。
      * @param  array
      *         The array that will back the new buffer
      *
@@ -386,6 +228,11 @@ public abstract class ByteBuffer
      * undefined.  Its {@link #array backing array} will be the
      * given array, and its {@link #arrayOffset array offset>} will
      * be zero.  </p>
+     * 将字节数组包装到缓冲区中。
+     * 新缓冲区将由给定的字节数组支持；
+     * 也就是说，对缓冲区的修改将导致数组被修改，反之亦然。
+     * 新缓冲区的容量和限制将为array.length，其位置将为零，
+     * 并且其标记将是未定义的。它的支持数组将是给定的数组，并且它的array offset>将为零。
      *
      * @param  array
      *         The array that will back this buffer

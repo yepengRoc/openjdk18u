@@ -1,28 +1,3 @@
-/*
- * Copyright (c) 1994, 2016, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
 package java.lang;
 
 import java.lang.ref.Reference;
@@ -43,39 +18,22 @@ import sun.security.util.SecurityConstants;
 
 
 /**
- * A <i>thread</i> is a thread of execution in a program. The Java
- * Virtual Machine allows an application to have multiple threads of
- * execution running concurrently.
+ * 线程是程序中的执行线程。Java虚拟机允许应用程序具有多个并发运行的执行线程。
  * <p>
- * Every thread has a priority. Threads with higher priority are
- * executed in preference to threads with lower priority. Each thread
- * may or may not also be marked as a daemon. When code running in
- * some thread creates a new <code>Thread</code> object, the new
- * thread has its priority initially set equal to the priority of the
- * creating thread, and is a daemon thread if and only if the
- * creating thread is a daemon.
+ *每个线程都有一个优先级。具有较高优先级的线程优先于具有较低优先级的线程执行。
+ * 每个线程可能会也可能不会被标记为守护程序。当在某个线程中运行的代码创建新的Thread对象时，
+ * 新线程的优先级最初设置为与创建线程的优先级相等，并且当且仅当创建线程是守护程序时，该线程才是守护程序线程。
  * <p>
- * When a Java Virtual Machine starts up, there is usually a single
- * non-daemon thread (which typically calls the method named
- * <code>main</code> of some designated class). The Java Virtual
- * Machine continues to execute threads until either of the following
- * occurs:
+ *当Java虚拟机启动时，通常只有一个非守护线程（通常调用某些指定类的名为main的方法）。
+ * Java虚拟机将继续执行线程，直到发生以下任何一种情况：
  * <ul>
- * <li>The <code>exit</code> method of class <code>Runtime</code> has been
- *     called and the security manager has permitted the exit operation
- *     to take place.
- * <li>All threads that are not daemon threads have died, either by
- *     returning from the call to the <code>run</code> method or by
- *     throwing an exception that propagates beyond the <code>run</code>
- *     method.
+ * <li>调用了Runtime类的退出方法，并且安全管理器允许进行退出操作。
+ * <li>不是守护程序线程的所有线程都已死亡，要么通过从调用返回到run方法，要么通过抛出传播到run方法之外的异常来终止。
  * </ul>
  * <p>
- * There are two ways to create a new thread of execution. One is to
- * declare a class to be a subclass of <code>Thread</code>. This
- * subclass should override the <code>run</code> method of class
- * <code>Thread</code>. An instance of the subclass can then be
- * allocated and started. For example, a thread that computes primes
- * larger than a stated value could be written as follows:
+ * 有两种方法可以创建新的执行线程。一种是将一个类声明为Thread的子类。
+ * 该子类应重写Thread类的run方法。然后可以分配并启动子类的实例。
+ * 例如，计算素数大于指定值的线程可以编写如下：
  * <hr><blockquote><pre>
  *     class PrimeThread extends Thread {
  *         long minPrime;
@@ -90,18 +48,14 @@ import sun.security.util.SecurityConstants;
  *     }
  * </pre></blockquote><hr>
  * <p>
- * The following code would then create a thread and start it running:
+ * 下面的代码将创建一个线程并使其开始运行：
  * <blockquote><pre>
  *     PrimeThread p = new PrimeThread(143);
  *     p.start();
  * </pre></blockquote>
  * <p>
- * The other way to create a thread is to declare a class that
- * implements the <code>Runnable</code> interface. That class then
- * implements the <code>run</code> method. An instance of the class can
- * then be allocated, passed as an argument when creating
- * <code>Thread</code>, and started. The same example in this other
- * style looks like the following:
+ * 创建线程的另一种方法是声明一个实现Runnable接口的类。然后，该类实现run方法。
+ * 然后可以分配该类的实例，在创建Thread时将其作为参数传递并启动。其他样式的相同示例如下所示：
  * <hr><blockquote><pre>
  *     class PrimeRun implements Runnable {
  *         long minPrime;
@@ -116,19 +70,14 @@ import sun.security.util.SecurityConstants;
  *     }
  * </pre></blockquote><hr>
  * <p>
- * The following code would then create a thread and start it running:
+ * 下面的代码将创建一个线程并使其开始运行：
  * <blockquote><pre>
  *     PrimeRun p = new PrimeRun(143);
  *     new Thread(p).start();
  * </pre></blockquote>
- * <p>
- * Every thread has a name for identification purposes. More than
- * one thread may have the same name. If a name is not specified when
- * a thread is created, a new name is generated for it.
- * <p>
- * Unless otherwise noted, passing a {@code null} argument to a constructor
- * or method in this class will cause a {@link NullPointerException} to be
- * thrown.
+ * <p>每个线程都有一个名称供识别。一个以上的线程可能具有相同的名称。
+ * 如果在创建线程时未指定名称，则会为其生成一个新名称。
+ * <p>除非另有说明，否则将null参数传递给此类中的构造函数或方法将导致引发NullPointerException。
  *
  * @author  unascribed
  * @see     Runnable

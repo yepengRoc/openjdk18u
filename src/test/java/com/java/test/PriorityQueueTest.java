@@ -1,6 +1,5 @@
 package com.java.test;
 
-import java.lang.reflect.Proxy;
 import java.util.PriorityQueue;
 
 public class PriorityQueueTest {

@@ -1,28 +1,3 @@
-/*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
 package java.lang;
 import java.lang.ref.*;
 import java.util.Objects;
@@ -30,43 +5,35 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 /**
- * This class provides thread-local variables.  These variables differ from
- * their normal counterparts in that each thread that accesses one (via its
- * {@code get} or {@code set} method) has its own, independently initialized
- * copy of the variable.  {@code ThreadLocal} instances are typically private
- * static fields in classes that wish to associate state with a thread (e.g.,
- * a user ID or Transaction ID).
+ * 此类提供线程局部变量。这些变量与普通变量不同，每个访问一个线程（通过其get或set方法）的线程都有其自己的，
+ * 独立初始化的变量副本。ThreadLocal实例通常是希望将状态与线程关联的类中的私有静态字段（例如，用户ID或交易ID）。
  *
- * <p>For example, the class below generates unique identifiers local to each
- * thread.
+ * <p>例如，下面的类生成每个线程本地的唯一标识符。线程的ID是在第一次调用ThreadId.get（）时分配的，并且在以后的调用中保持不变。
  * A thread's id is assigned the first time it invokes {@code ThreadId.get()}
  * and remains unchanged on subsequent calls.
  * <pre>
  * import java.util.concurrent.atomic.AtomicInteger;
  *
  * public class ThreadId {
- *     // Atomic integer containing the next thread ID to be assigned
- *     private static final AtomicInteger nextId = new AtomicInteger(0);
+ *      // Atomic integer containing the next thread ID to be assigned
+ *      private static final AtomicInteger nextId = new AtomicInteger(0);
  *
- *     // Thread local variable containing each thread's ID
- *     private static final ThreadLocal&lt;Integer&gt; threadId =
- *         new ThreadLocal&lt;Integer&gt;() {
- *             &#64;Override protected Integer initialValue() {
- *                 return nextId.getAndIncrement();
- *         }
- *     };
+ *      // Thread local variable containing each thread's ID
+ *      private static final ThreadLocal<Integer> threadId =
+ *          new ThreadLocal<Integer>() {
+ *              @Override protected Integer initialValue() {
+ *                  return nextId.getAndIncrement();
+ *          }
+ *      };
  *
- *     // Returns the current thread's unique ID, assigning it if necessary
- *     public static int get() {
- *         return threadId.get();
- *     }
- * }
+ *      // Returns the current thread's unique ID, assigning it if necessary
+ *      public static int get() {
+ *          return threadId.get();
+ *      }
+ *  }
  * </pre>
- * <p>Each thread holds an implicit reference to its copy of a thread-local
- * variable as long as the thread is alive and the {@code ThreadLocal}
- * instance is accessible; after a thread goes away, all of its copies of
- * thread-local instances are subject to garbage collection (unless other
- * references to these copies exist).
+ * <p>只要线程是活动的并且ThreadLocal实例是可访问的，则每个线程都对其线程局部变量的副本持有隐式引用。
+ * 线程消失后，线程本地实例的所有副本都会受到垃圾回收（除非存在对这些副本的其他引用）。
  *
  * @author  Josh Bloch and Doug Lea
  * @since   1.2
@@ -195,6 +162,32 @@ public class ThreadLocal<T> {
      *
      * @param value the value to be stored in the current thread's copy of
      *        this thread-local.
+     *
+     * threadlocal 底层是通过一个ThreadLocalMap 来存储值的。
+     * ThreadLocalMap 维护在Thread线程中
+     * ThreadLocalMap 是一个hashmap，hashmap在遇到hash冲突时，是
+     * 通过链式存储去解决hash冲突的，ThreadLocalMap在遇到hash冲突时，是通过
+     * 遍历底层存储entry查找一个为null的位置来存储数据。
+     * ThreadLocalMap中key是当前的threadlocal，如果想通过ThreadLocal来存储与
+     *线程相关的数据，
+     * 一种：定义多个ThreadLocal
+     * 例如：存储名字和年纪
+     * ThreadLocal<String> nameThreaLocal = new ThreadLocal<String>();
+     * ThreadLocal<Int> ageThreadLocal = new ThreadLocal<Int>();
+     *
+     * 当前线程中的ThreadLocalMap 以nameThreaLocal为key的存储的是名字
+     * 以ageThreadLocal 为key存储的是年纪
+     *
+     * 另外一种：
+     *   class DataModel{
+     *       private String name;
+     *       private int age;
+     *   }
+     *   ThreadLocal<DataModel> dataThreaLocal = new ThreadLocal<DataModel>();
+     *   定义一个数据model，把要取的属性都放到这个model中
+     *
+     *
+     *
      */
     public void set(T value) {
         Thread t = Thread.currentThread();
@@ -294,6 +287,10 @@ public class ThreadLocal<T> {
      * WeakReferences for keys. However, since reference queues are not
      * used, stale entries are guaranteed to be removed only when
      * the table starts running out of space.
+     *
+     * ThreadLocalMap是一个自定义的哈希映射，仅适用于维护线程局部值。没有在ThreadLocal类之外导出任何操作。
+     * 该类是包私有的，允许在Thread类中声明字段。为了帮助处理非常大且长期存在的用法，
+     * 哈希表条目使用WeakReferences作为键。但是，由于未使用参考队列，因此仅在表开始空间不足时，才保证删除过时的条目。
      */
     static class ThreadLocalMap {
 
@@ -304,6 +301,9 @@ public class ThreadLocal<T> {
          * == null) mean that the key is no longer referenced, so the
          * entry can be expunged from table.  Such entries are referred to
          * as "stale entries" in the code that follows.
+         * 此哈希映射中的条目使用其主引用字段作为键（始终是ThreadLocal对象）扩展了WeakReference。
+         * 请注意，空键（即entry.get（）== null）意味着不再引用该键，因此可以从表中删除条目。
+         * 在下面的代码中，此类条目称为“陈旧条目”。
          */
         static class Entry extends WeakReference<ThreadLocal<?>> {
             /** The value associated with this ThreadLocal. */
@@ -361,6 +361,8 @@ public class ThreadLocal<T> {
          * Construct a new map initially containing (firstKey, firstValue).
          * ThreadLocalMaps are constructed lazily, so we only create
          * one when we have at least one entry to put in it.
+         *
+         * 创建一个map
          */
         ThreadLocalMap(ThreadLocal<?> firstKey, Object firstValue) {
             table = new Entry[INITIAL_CAPACITY];

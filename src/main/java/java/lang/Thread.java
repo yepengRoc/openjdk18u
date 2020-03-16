@@ -823,11 +823,13 @@ class Thread implements Runnable {
 
     /**
      * Interrupts this thread.
+     * 中断此线程。
      *
      * <p> Unless the current thread is interrupting itself, which is
      * always permitted, the {@link #checkAccess() checkAccess} method
      * of this thread is invoked, which may cause a {@link
      * SecurityException} to be thrown.
+     * 除非当前线程一直在中断自身（通常允许这样做），否则将调用此线程的checkAccess方法，这可能会引发SecurityException。
      *
      * <p> If this thread is blocked in an invocation of the {@link
      * Object#wait() wait()}, {@link Object#wait(long) wait(long)}, or {@link
@@ -837,22 +839,31 @@ class Thread implements Runnable {
      * methods of this class, then its interrupt status will be cleared and it
      * will receive an {@link InterruptedException}.
      *
+     * 如果在调用Object类的wait（），wait（long）或wait（long，int）方法或join（），join（long），
+     * join（long，int）的方法时阻塞了此线程，此类的sleep（long）或sleep（long，int）方法，
+     * 则其中断状态将被清除，并将收到InterruptedException。
+     *
      * <p> If this thread is blocked in an I/O operation upon an {@link
      * java.nio.channels.InterruptibleChannel InterruptibleChannel}
      * then the channel will be closed, the thread's interrupt
      * status will be set, and the thread will receive a {@link
      * java.nio.channels.ClosedByInterruptException}.
+     * 如果此线程在InterruptibleChannel上的I / O操作中被阻止，则该通道将关闭，
+     * 该线程的中断状态将被设置，并且该线程将收到ClosedByInterruptException。
      *
      * <p> If this thread is blocked in a {@link java.nio.channels.Selector}
      * then the thread's interrupt status will be set and it will return
      * immediately from the selection operation, possibly with a non-zero
      * value, just as if the selector's {@link
      * java.nio.channels.Selector#wakeup wakeup} method were invoked.
+     * 如果此线程在选择器中被阻塞，则该线程的中断状态将被设置，并且它将立即从选择操作中返回，可能具有非零值，就像调用选择器的唤醒方法一样。
      *
      * <p> If none of the previous conditions hold then this thread's interrupt
      * status will be set. </p>
+     * 如果以上条件均不成立，则将设置该线程的中断状态。
      *
      * <p> Interrupting a thread that is not alive need not have any effect.
+     * 中断未激活的线程不会产生任何效果。
      *
      * @throws  SecurityException
      *          if the current thread cannot modify this thread
@@ -882,11 +893,13 @@ class Thread implements Runnable {
      * second call would return false (unless the current thread were
      * interrupted again, after the first call had cleared its interrupted
      * status and before the second call had examined it).
+     * 测试当前线程是否已被中断。通过此方法可以清除线程的中断状态。换句话说，
+     * 如果要连续两次调用此方法，则第二个调用将返回false（除非在第一个调用清除了其中断状态之后且在第二个调用对其进行检查之前，当前线程再次被中断）。
      *
      * <p>A thread interruption ignored because a thread was not alive
      * at the time of the interrupt will be reflected by this method
      * returning false.
-     *
+     * 由于此方法返回false，因此将反映线程中断，因为该线程在中断时尚未处于活动状态而被忽略。
      * @return  <code>true</code> if the current thread has been interrupted;
      *          <code>false</code> otherwise.
      * @see #isInterrupted()
@@ -899,10 +912,11 @@ class Thread implements Runnable {
     /**
      * Tests whether this thread has been interrupted.  The <i>interrupted
      * status</i> of the thread is unaffected by this method.
-     *
+     *测试此线程是否已被中断。线程的中断状态不受此方法的影响。
      * <p>A thread interruption ignored because a thread was not alive
      * at the time of the interrupt will be reflected by this method
      * returning false.
+     * 由于此方法返回false，因此将反映线程中断，因为该线程在中断时尚未处于活动状态而被忽略。
      *
      * @return  <code>true</code> if this thread has been interrupted;
      *          <code>false</code> otherwise.

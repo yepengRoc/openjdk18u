@@ -52,6 +52,8 @@ import java.util.Spliterator;
  * element that has been on the queue the shortest time. New elements
  * are inserted at the tail of the queue, and the queue retrieval
  * operations obtain elements at the head of the queue.
+ * 由数组支持的有界阻塞队列。此队列对元素FIFO（先进先出）进行排序。
+ * 队列的开头是已在队列中停留最长时间的元素。队列的尾部是最短时间位于队列中的元素。新元素插入到队列的尾部，并且队列检索操作在队列的开头获取元素。
  *
  * <p>This is a classic &quot;bounded buffer&quot;, in which a
  * fixed-sized array holds elements inserted by producers and
@@ -59,6 +61,8 @@ import java.util.Spliterator;
  * changed.  Attempts to {@code put} an element into a full queue
  * will result in the operation blocking; attempts to {@code take} an
  * element from an empty queue will similarly block.
+ * 这是经典的“有界缓冲区”，其中固定大小的数组包含由生产者插入并由消费者提取的元素。
+ * 创建后，容量将无法更改。试图将一个元素放入一个完整的队列将导致操作阻塞；从空队列中取出一个元素的尝试也会类似地阻塞。
  *
  * <p>This class supports an optional fairness policy for ordering
  * waiting producer and consumer threads.  By default, this ordering
@@ -66,6 +70,8 @@ import java.util.Spliterator;
  * to {@code true} grants threads access in FIFO order. Fairness
  * generally decreases throughput but reduces variability and avoids
  * starvation.
+ * 此类支持可选的公平性策略，用于订购正在等待的生产者和使用者线程。默认情况下，
+ * 不保证此排序。但是，将公平性设置为true构造的队列将按FIFO顺序授予线程访问权限。公平通常会降低吞吐量，但会减少可变性并避免饥饿。
  *
  * <p>This class and its iterator implement all of the
  * <em>optional</em> methods of the {@link Collection} and {@link
@@ -74,6 +80,8 @@ import java.util.Spliterator;
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
+ *
+ * 通过队列尾部插入元素
  *
  * @since 1.5
  * @author Doug Lea
@@ -90,7 +98,9 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      */
     private static final long serialVersionUID = -817911632652898426L;
 
-    /** The queued items */
+    /** The queued items
+     * 底层是一个object数组
+     * */
     final Object[] items;
 
     /** items index for next take, poll, peek or remove */
@@ -159,10 +169,10 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         // assert items[putIndex] == null;
         final Object[] items = this.items;
         items[putIndex] = x;
-        if (++putIndex == items.length)
+        if (++putIndex == items.length)//如果放入索引已经到数组的尾部了，则重置为0
             putIndex = 0;
         count++;
-        notEmpty.signal();
+        notEmpty.signal();//唤醒获取数据的线程
     }
 
     /**
@@ -309,7 +319,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean add(E e) {
-        return super.add(e);
+        return super.add(e);//底层是通过offer方法操作的
     }
 
     /**
@@ -320,13 +330,16 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
      * which can fail to insert an element only by throwing an exception.
      *
      * @throws NullPointerException if the specified element is null
+     *
+     * 添加元素，线程安全，通过可重入锁实现
+     *
      */
     public boolean offer(E e) {
         checkNotNull(e);
         final ReentrantLock lock = this.lock;
         lock.lock();
         try {
-            if (count == items.length)
+            if (count == items.length)//数组满了.则不放入值
                 return false;
             else {
                 enqueue(e);
@@ -349,7 +362,7 @@ public class ArrayBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock lock = this.lock;
         lock.lockInterruptibly();
         try {
-            while (count == items.length)
+            while (count == items.length)//数组满了，则进行阻塞
                 notFull.await();
             enqueue(e);
         } finally {

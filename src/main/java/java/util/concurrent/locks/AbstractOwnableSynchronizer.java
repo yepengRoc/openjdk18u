@@ -43,6 +43,8 @@ package java.util.concurrent.locks;
  * use this information. However, subclasses and tools may use
  * appropriately maintained values to help control and monitor access
  * and provide diagnostics.
+ * 线程专有的同步器。此类为创建可能需要所有权概念的锁和相关的同步器提供了基础。
+ * AbstractOwnableSynchronizer类本身并不管理或使用此信息。但是，子类和工具可以使用适当维护的值来帮助控制和监视访问并提供诊断。
  *
  * @since 1.6
  * @author Doug Lea
@@ -60,6 +62,7 @@ public abstract class AbstractOwnableSynchronizer
 
     /**
      * The current owner of exclusive mode synchronization.
+     * 独占模式同步的当前所有者
      */
     private transient Thread exclusiveOwnerThread;
 

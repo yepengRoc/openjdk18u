@@ -43,7 +43,8 @@ package java.util.concurrent;
  * instead of explicitly creating threads. For example, rather than
  * invoking {@code new Thread(new(RunnableTask())).start()} for each
  * of a set of tasks, you might use:
- *
+ *  执行提交的可运行{@link Runnable}任务的对象。该接口提供了一种将任务提交与每个任务将如何运行的机制（包括线程使用，调度的详细信息）的机制解耦的方法。
+ * 通常使用执行程序来代替显式创建线程。例如，可以为每个任务集调用新的{@code new Thread(new(RunnableTask())).start()}而不是：
  * <pre>
  * Executor executor = <em>anExecutor</em>;
  * executor.execute(new RunnableTask1());
@@ -55,7 +56,7 @@ package java.util.concurrent;
  * require that execution be asynchronous. In the simplest case, an
  * executor can run the submitted task immediately in the caller's
  * thread:
- *
+ *但是，Executor接口并不严格要求执行是异步的。在最简单的情况下，执行者可以在调用者的线程中立即运行提交的任务：
  *  <pre> {@code
  * class DirectExecutor implements Executor {
  *   public void execute(Runnable r) {
@@ -66,7 +67,7 @@ package java.util.concurrent;
  * More typically, tasks are executed in some thread other
  * than the caller's thread.  The executor below spawns a new thread
  * for each task.
- *
+ *更典型地，任务在调用者线程之外的某个线程中执行。下面的执行程序为每个任务生成一个新线程。
  *  <pre> {@code
  * class ThreadPerTaskExecutor implements Executor {
  *   public void execute(Runnable r) {
@@ -78,7 +79,7 @@ package java.util.concurrent;
  * limitation on how and when tasks are scheduled.  The executor below
  * serializes the submission of tasks to a second executor,
  * illustrating a composite executor.
- *
+ *许多执行器实现对计划任务的方式和时间施加了某种限制。下面的执行程序将任务提交序列化到第二个执行程序，说明了一个复合执行程序。
  *  <pre> {@code
  * class SerialExecutor implements Executor {
  *   final Queue<Runnable> tasks = new ArrayDeque<Runnable>();
@@ -116,12 +117,13 @@ package java.util.concurrent;
  * interface.  The {@link ThreadPoolExecutor} class provides an
  * extensible thread pool implementation. The {@link Executors} class
  * provides convenient factory methods for these Executors.
- *
+ * 此程序包中提供的Executor实现 实现了ExecutorService，这是一个更广泛的接口。
+ * ThreadPoolExecutor类提供了可扩展的线程池实现。Executors类为这些Executor提供了方便的工厂方法。
  * <p>Memory consistency effects: Actions in a thread prior to
  * submitting a {@code Runnable} object to an {@code Executor}
  * <a href="package-summary.html#MemoryVisibility"><i>happen-before</i></a>
  * its execution begins, perhaps in another thread.
- *
+ *内存一致性影响：在将Runnable对象提交给Executor之前，线程中的操作发生在它开始执行之前，可能是在另一个线程中。
  * @since 1.5
  * @author Doug Lea
  */
@@ -131,7 +133,7 @@ public interface Executor {
      * Executes the given command at some time in the future.  The command
      * may execute in a new thread, in a pooled thread, or in the calling
      * thread, at the discretion of the {@code Executor} implementation.
-     *
+     * 在将来的某个时间执行给定的命令。根据执行器的执行情况，命令可以在新线程，池线程或调用线程中执行。
      * @param command the runnable task
      * @throws RejectedExecutionException if this task cannot be
      * accepted for execution

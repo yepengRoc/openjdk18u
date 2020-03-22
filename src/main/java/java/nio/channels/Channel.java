@@ -1,27 +1,3 @@
-/*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
 
 package java.nio.channels;
 
@@ -31,21 +7,26 @@ import java.io.Closeable;
 
 /**
  * A nexus for I/O operations.
+ *  I / O操作的联系。
  *
  * <p> A channel represents an open connection to an entity such as a hardware
  * device, a file, a network socket, or a program component that is capable of
  * performing one or more distinct I/O operations, for example reading or
  * writing.
+ * 通道表示与诸如硬件设备，文件，网络套接字或程序组件之类的实体的开放连接，该实体能够执行一个或多个不同的I / O操作（例如，读取或写入）。
  *
  * <p> A channel is either open or closed.  A channel is open upon creation,
  * and once closed it remains closed.  Once a channel is closed, any attempt to
  * invoke an I/O operation upon it will cause a {@link ClosedChannelException}
  * to be thrown.  Whether or not a channel is open may be tested by invoking
  * its {@link #isOpen isOpen} method.
+ * 通道是打开的还是关闭的。通道在创建时打开，一旦关闭，它便保持关闭状态。通道一旦关闭，
+ * 任何在其上调用I / O操作的尝试都将引发ClosedChannelException。可以通过调用isOpen方法来测试通道是否打开。
  *
  * <p> Channels are, in general, intended to be safe for multithreaded access
  * as described in the specifications of the interfaces and classes that extend
  * and implement this interface.
+ * 通常，通道的目的是确保多线程访问的安全，如接口规范以及扩展和实现此接口的类中所述。
  *
  *
  * @author Mark Reinhold

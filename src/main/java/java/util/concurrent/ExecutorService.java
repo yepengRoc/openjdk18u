@@ -64,7 +64,7 @@ import java.util.Collection;
  * tasks and then waiting for at least one, or all, to
  * complete. (Class {@link ExecutorCompletionService} can be used to
  * write customized variants of these methods.)
- *方法提交通过创建并返回可以用于取消执行和/或等待完成的Future来扩展基本方法Executor.execute（Runnable）。
+ * 方法提交通过创建并返回可以用于取消执行和/或等待完成的Future来扩展基本方法Executor.execute（Runnable）。
  * 方法invokeAny和invokeAll执行批量执行的最常用形式，执行一组任务，然后等待至少一个或全部完成。
  * （类ExecutorCompletionService可用于编写这些方法的自定义变体。）
  * <p>The {@link Executors} class provides factory methods for the

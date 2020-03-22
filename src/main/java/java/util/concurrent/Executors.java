@@ -1,38 +1,3 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-/*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file:
- *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
-
 package java.util.concurrent;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -49,20 +14,26 @@ import sun.security.util.SecurityConstants;
  * ExecutorService}, {@link ScheduledExecutorService}, {@link
  * ThreadFactory}, and {@link Callable} classes defined in this
  * package. This class supports the following kinds of methods:
- *
+ *此程序包中定义的Executor，ExecutorService，ScheduledExecutorService，ThreadFactory和Callable类的工厂和实用程序方法。此类支持以下方法：
  * <ul>
  *   <li> Methods that create and return an {@link ExecutorService}
  *        set up with commonly useful configuration settings.
+ *        使用通常有用的配置设置创建和返回ExecutorService的方法。
  *   <li> Methods that create and return a {@link ScheduledExecutorService}
  *        set up with commonly useful configuration settings.
+ *        使用常用的配置设置创建并返回ScheduledExecutorService的方法。
  *   <li> Methods that create and return a "wrapped" ExecutorService, that
  *        disables reconfiguration by making implementation-specific methods
  *        inaccessible.
+ *        创建并返回“包装的” ExecutorService的方法，该方法通过使特定于实现的方法不可访问来禁用重新配置。
+ *        -- 禁止修改配置
  *   <li> Methods that create and return a {@link ThreadFactory}
  *        that sets newly created threads to a known state.
+ *        创建并返回将新创建的线程设置为已知状态的ThreadFactory的方法。
  *   <li> Methods that create and return a {@link Callable}
  *        out of other closure-like forms, so they can be used
  *        in execution methods requiring {@code Callable}.
+ *        从其他类似闭包的形式创建并返回Callable的方法，因此可以在需要Callable的执行方法中使用它们。
  * </ul>
  *
  * @since 1.5
@@ -80,6 +51,10 @@ public class Executors {
      * prior to shutdown, a new one will take its place if needed to
      * execute subsequent tasks.  The threads in the pool will exist
      * until it is explicitly {@link ExecutorService#shutdown shutdown}.
+     * 创建一个线程池，该线程池可重用在共享的无边界队列上运行的固定数量的线程。
+     * 在任何时候，最多nThreads个线程都是活动的处理任务。如果在所有线程都处于活动状态时提交了其他任务，
+     * 则它们将在队列中等待，直到某个线程可用为止。如果在关闭之前执行过程中由于执行失败导致任何线程终止，
+     * 则在执行后续任务时将使用新线程代替。池中的线程将一直存在，直到明确将其关闭。
      *
      * @param nThreads the number of threads in the pool
      * @return the newly created thread pool
@@ -100,7 +75,8 @@ public class Executors {
      * grow and shrink dynamically. A work-stealing pool makes no
      * guarantees about the order in which submitted tasks are
      * executed.
-     *
+     *创建一个线程池，该线程池维护足以支持给定并行度级别的线程，并可以使用多个队列来减少争用。
+     * 并行度级别对应于活跃参与或可用于参与任务处理的最大线程数。实际的线程数可能会动态增长和收缩。工作窃取池不能保证提交任务的执行顺序。
      * @param parallelism the targeted parallelism level
      * @return the newly created thread pool
      * @throws IllegalArgumentException if {@code parallelism <= 0}
@@ -140,7 +116,9 @@ public class Executors {
      * needed to execute subsequent tasks.  The threads in the pool will
      * exist until it is explicitly {@link ExecutorService#shutdown
      * shutdown}.
-     *
+     * 创建一个线程池，该线程池重用固定数量的线程，这些线程在共享的无界队列之外运行，
+     * 并在需要时使用提供的ThreadFactory创建新线程。在任何时候，最多nThreads个线程都是活动的处理任务。
+     * 如果在所有线程都处于活动状态时提交了其他任务，则它们将在队列中等待，直到某个线程可用为止。如果在关闭之前执行过程中由于执行失败导致任何线程终止，则在执行后续任务时将使用新线程代替。池中的线程将一直存在，直到明确将其关闭。
      * @param nThreads the number of threads in the pool
      * @param threadFactory the factory to use when creating new threads
      * @return the newly created thread pool
@@ -164,7 +142,9 @@ public class Executors {
      * given time. Unlike the otherwise equivalent
      * {@code newFixedThreadPool(1)} the returned executor is
      * guaranteed not to be reconfigurable to use additional threads.
-     *
+     * 创建一个执行程序，该执行程序使用在不受限制的(无界)队列上操作的单个工作线程。
+     * （但是请注意，如果该单线程由于在关闭之前执行期间由于执行失败而终止，则在需要执行新任务时将使用新线程代替。）
+     * 保证任务按顺序执行，并且活动的任务不超过一个在任何给定时间。与其他等效的newFixedThreadPool（1）不同，保证返回的执行程序不能重新配置为使用其他线程。
      * @return the newly created single-threaded Executor
      */
     public static ExecutorService newSingleThreadExecutor() {
@@ -209,6 +189,10 @@ public class Executors {
      * not consume any resources. Note that pools with similar
      * properties but different details (for example, timeout parameters)
      * may be created using {@link ThreadPoolExecutor} constructors.
+     * 创建一个线程池，该线程池根据需要创建新线程，但是在可用之前重新使用以前构造的线程。
+     * 这些池通常将提高执行许多短期异步任务的程序的性能。如果可用，执行调用将重用以前构造的线程。
+     * 如果没有可用的现有线程，则将创建一个新线程并将其添加到池中。六十秒内未使用的线程将终止并从缓存中删除。
+     * 因此，保持空闲时间足够长的池不会消耗任何资源。请注意，可以使用ThreadPoolExecutor构造函数创建具有相似属性但细节不同（例如，超时参数）的池。
      *
      * @return the newly created thread pool
      */
@@ -246,6 +230,9 @@ public class Executors {
      * {@code newScheduledThreadPool(1)} the returned executor is
      * guaranteed not to be reconfigurable to use additional threads.
      * @return the newly created scheduled executor
+     * 创建一个单线程执行器，该执行器可以安排命令在给定的延迟后运行或定期执行。
+     * （但是请注意，如果该单线程由于在关闭之前执行期间由于执行失败而终止，则在需要执行新任务时将使用新线程代替。）
+     * 保证任务按顺序执行，并且活动的任务不超过一个在任何给定时间。与其他等效的newScheduledThreadPool（1）不同，保证返回的执行程序不可重新配置为使用其他线程。
      */
     public static ScheduledExecutorService newSingleThreadScheduledExecutor() {
         return new DelegatedScheduledExecutorService
@@ -276,6 +263,7 @@ public class Executors {
     /**
      * Creates a thread pool that can schedule commands to run after a
      * given delay, or to execute periodically.
+     * 创建一个线程池，该线程池可以安排命令在给定的延迟后运行或定期执行。
      * @param corePoolSize the number of threads to keep in the pool,
      * even if they are idle
      * @return a newly created scheduled thread pool
@@ -307,6 +295,8 @@ public class Executors {
      * other methods that might otherwise be accessible using
      * casts. This provides a way to safely "freeze" configuration and
      * disallow tuning of a given concrete implementation.
+     *  返回一个对象，该对象将所有已定义的ExecutorService方法委托给给定的执行者，
+     *  但不包括其他任何其他可能使用强制类型转换访问的方法。这提供了一种安全“冻结”配置并禁止调整给定具体实现的方法。
      * @param executor the underlying implementation
      * @return an {@code ExecutorService} instance
      * @throws NullPointerException if executor null

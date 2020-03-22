@@ -1,37 +1,3 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-/*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file:
- *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
 
 package java.util.concurrent;
 import java.util.*;
@@ -47,10 +13,14 @@ import java.util.*;
  * returned. Subclasses may override the {@code newTaskFor} methods
  * to return {@code RunnableFuture} implementations other than
  * {@code FutureTask}.
- *
+ *提供ExecutorService执行方法的默认实现。此类使用newTaskFor返回的RunnableFuture来实现commit，
+ * invokeAny和invokeAll方法，该方法默认为此程序包中提供的FutureTask类。
+ * 例如，submit（Runnable）的实现创建一个关联的RunnableFuture，
+ * 该关联的RunnableFuture将被执行并返回。子类可以重写newTaskFor方法以返回RunTask以外的RunnableFuture实现。
  * <p><b>Extension example</b>. Here is a sketch of a class
  * that customizes {@link ThreadPoolExecutor} to use
  * a {@code CustomTask} class instead of the default {@code FutureTask}:
+ * 扩展示例。这是自定义ThreadPoolExecutor以使用CustomTask类而不是默认FutureTask类的类的草图：
  *  <pre> {@code
  * public class CustomThreadPoolExecutor extends ThreadPoolExecutor {
  *
@@ -155,7 +125,7 @@ public abstract class AbstractExecutorService implements ExecutorService {
         // done before submitting more of them. This interleaving
         // plus the exception mechanics account for messiness of main
         // loop.
-
+//        为了提高效率（尤其是在并行性有限的执行器中），请在提交更多任务之前检查是否完成了先前提交的任务。这种交织加上异常机制说明了主循环的混乱。
         try {
             // Record exceptions so that if we fail to obtain any
             // result, we can throw the last exception we got.

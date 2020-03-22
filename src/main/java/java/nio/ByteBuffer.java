@@ -8,7 +8,8 @@ package java.nio;
  *  <li>读取{@link #get()}和写入{@link #put(byte)}单个字节的绝对和相对的get和put方法；
  *  <li>相对批量获取{@link #get(byte[]) }方法，用于将字节的连续序列从此缓冲区传输到数组中；
  *  <li>相对批量放置{@link #put(byte[])}方法，用于将字节数组或某些其他字节缓冲区中连续的字节序列传输到此缓冲区中；
- *  <li>绝对和相对的get{@link #getChar()}和put{@link #putChar(char)} 方法，用于读取和写入其他原始类型的值，并将它们以特定字节顺序在字节序列之间来回转换；
+ *  <li>绝对和相对的get{@link #getChar()}和put{@link #putChar(char)} 方法，用于读取和写入其他原始类型的值，
+ *  并将它们以特定字节顺序在字节序列之间来回转换；
  *  <li>创建视图缓冲区的方法，该方法允许将字节缓冲区视为包含某些其他原始类型值的缓冲区；
  *  <li>和压缩 {@link #compact}，复制{@link#duplicate}和切片{@link #slice}字节缓冲区的方法。
  *

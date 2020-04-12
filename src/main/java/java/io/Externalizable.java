@@ -39,6 +39,9 @@ import java.io.ObjectInput;
  * and its supertypes. These methods must explicitly
  * coordinate with the supertype to save its state. These methods supersede
  * customized implementations of writeObject and readObject methods.<br>
+ * 只有可外部化实例的类的标识才被写入序列化流中，并且类的责任是保存和恢复其实例的内容。
+ * 类可实现Externalizable接口的writeExternal和readExternal方法，以使该类完全控制对象及其超类型的流的格式和内容。
+ * 这些方法必须与超类型显式协调以保存其状态。这些方法取代了writeObject和readObject方法的定制实现。
  *
  * Object Serialization uses the Serializable and Externalizable
  * interfaces.  Object persistence mechanisms can use them as well.  Each
@@ -54,6 +57,12 @@ import java.io.ObjectInput;
  * An Externalizable instance can designate a substitution object via
  * the writeReplace and readResolve methods documented in the Serializable
  * interface.<br>
+ * 对象序列化使用Serializable和Externalizable接口。对象持久性机制也可以使用它们。
+ * 将测试每个要存储的对象的Externalizable接口。如果对象支持Externalizable，
+ * 则调用writeExternal方法。如果对象不支持Externalizable并且实现了Serializable，
+ * 则使用ObjectOutputStream保存该对象。重建Externalizable对象时，将使用公共no-arg构造函数创建一个实例，
+ * 然后调用readExternal方法。可序列化的对象通过从ObjectInputStream读取来恢复。
+ * Externalizable实例可以通过Serializable接口中记录的writeReplace和readResolve方法指定替换对象。
  *
  * @author  unascribed
  * @see java.io.ObjectOutputStream
@@ -69,6 +78,7 @@ public interface Externalizable extends java.io.Serializable {
      * by calling the methods of DataOutput for its primitive values or
      * calling the writeObject method of ObjectOutput for objects, strings,
      * and arrays.
+     * 通过调用DataOutput方法的原始值或调用ObjectOutput对象的writeObject方法的对象，字符串和数组，该对象实现了writeExternal方法来保存其内容。
      *
      * @serialData Overriding methods should use this tag to describe
      *             the data layout of this Externalizable object.
@@ -87,6 +97,8 @@ public interface Externalizable extends java.io.Serializable {
      * types and readObject for objects, strings and arrays.  The
      * readExternal method must read the values in the same sequence
      * and with the same types as were written by writeExternal.
+     * 该对象通过调用用于原始类型的DataInput方法和用于对象，字符串和数组的readObject方法来实现readExternal方法，
+     * 以恢复其内容。readExternal方法必须按与writeExternal相同的顺序和相同的类型读取值。
      *
      * @param in the stream to read data from in order to restore the object
      * @exception IOException if I/O errors occur

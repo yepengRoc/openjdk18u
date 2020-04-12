@@ -35,6 +35,7 @@ package java.io;
  * from data in
  * <a href="#modified-utf-8">modified UTF-8</a>
  * format.
+ * DataInput接口提供了从二进制流中读取字节并从中重建任何Java原语类型的数据的功能。还有一种功能可以根据修改后的UTF-8格式的数据重建字符串。
  * <p>
  * It is generally true of all the reading
  * routines in this interface that if end of
@@ -47,7 +48,8 @@ package java.io;
  * thrown. In particular, an {@code IOException}
  * may be thrown if the input stream has been
  * closed.
- *
+ * 通常，对于该接口中的所有读取例程，如果在读取所需的字节数之前已到达文件末尾，则会引发EOFException（这是一种IOException）。
+ * 如果除了文件末尾以外的任何其他原因都无法读取任何字节，则抛出EOFException以外的IOException。特别是，如果输入流已关闭，则可能引发IOException。
  * <h3><a name="modified-utf-8">Modified UTF-8</a></h3>
  * <p>
  * Implementations of the DataInput and DataOutput interfaces represent
@@ -57,6 +59,8 @@ package java.io;
  * 4.0</i>).
  * Note that in the following table, the most significant bit appears in the
  * far left-hand column.
+ * DataInput和DataOutput接口的实现表示Unicode字符串，其格式是对UTF-8的略微修改。（有关标准UTF-8格式的信息，
+ * 请参见Unicode标准版本4.0的3.9 Unicode编码形式）。请注意，在下表中，最高有效位出现在最左侧的列中。
  *
  * <blockquote>
  *   <table border="1" cellspacing="0" cellpadding="8"
@@ -136,9 +140,12 @@ package java.io;
  * <li>The null byte {@code '\u005Cu0000'} is encoded in 2-byte format
  *     rather than 1-byte, so that the encoded strings never have
  *     embedded nulls.
+ *     空字节'\ u0000'是以2字节格式而不是1字节编码的，因此编码的字符串永远不会嵌入空值。
  * <li>Only the 1-byte, 2-byte, and 3-byte formats are used.
+ * 仅使用1字节，2字节和3字节格式。
  * <li><a href="../lang/Character.html#unicode">Supplementary characters</a>
  *     are represented in the form of surrogate pairs.
+ *     补充字符以代理对的形式表示。
  * </ul>
  * @author  Frank Yellin
  * @see     java.io.DataInputStream

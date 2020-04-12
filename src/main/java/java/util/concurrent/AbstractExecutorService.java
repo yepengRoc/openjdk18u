@@ -13,7 +13,7 @@ import java.util.*;
  * returned. Subclasses may override the {@code newTaskFor} methods
  * to return {@code RunnableFuture} implementations other than
  * {@code FutureTask}.
- *提供ExecutorService执行方法的默认实现。此类使用newTaskFor返回的RunnableFuture来实现commit，
+ * 提供ExecutorService执行方法的默认实现。此类使用newTaskFor返回的RunnableFuture来实现commit，
  * invokeAny和invokeAll方法，该方法默认为此程序包中提供的FutureTask类。
  * 例如，submit（Runnable）的实现创建一个关联的RunnableFuture，
  * 该关联的RunnableFuture将被执行并返回。子类可以重写newTaskFor方法以返回RunTask以外的RunnableFuture实现。

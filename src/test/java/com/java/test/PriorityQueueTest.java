@@ -14,5 +14,7 @@ public class PriorityQueueTest {
 
         priorityQueue.remove();//移除头元素，没有就抛异常
         priorityQueue.element();//获取但是不移除
+
+        //
     }
 }

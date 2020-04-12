@@ -149,7 +149,7 @@ public interface ExecutorService extends Executor {
      * <p>This method does not wait for previously submitted tasks to
      * complete execution.  Use {@link #awaitTermination awaitTermination}
      * to do that.
-     *启动有序关闭，在该关闭中执行先前提交的任务，但不接受任何新任务。如果已关闭，则调用不会产生任何其他影响。
+     * 启动有序关闭，在该关闭中执行先前提交的任务，但不接受任何新任务。如果已关闭，则调用不会产生任何其他影响。
      * 此方法不等待先前提交的任务完成执行。使用awaitTermination可以做到这一点。
      * @throws SecurityException if a security manager exists and
      *         shutting down this ExecutorService may manipulate

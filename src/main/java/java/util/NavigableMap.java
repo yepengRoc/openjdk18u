@@ -46,6 +46,9 @@ package java.util;
  * {@code lowerKey}, {@code floorKey}, {@code ceilingKey}, and
  * {@code higherKey} return only the associated keys. All of these
  * methods are designed for locating, not traversing entries.
+ * 使用导航方法扩展的SortedMap返回给定搜索目标的最接近匹配项。方法lowerEntry，floorEntry，ceilingEntry和higherEntry返回分别与小于，
+ * 小于或等于，大于或等于和大于给定键的键关联的Map.Entry对象，如果没有这样的键，则返回null。同样，方法lowerKey，floorKey，
+ * ceilingKey和higherKey仅返回关联的键。所有这些方法都是为查找而不是遍历条目而设计的。
  *
  * <p>A {@code NavigableMap} may be accessed and traversed in either
  * ascending or descending key order.  The {@code descendingMap}
@@ -58,11 +61,15 @@ package java.util;
  * whether lower and upper bounds are inclusive versus exclusive.
  * Submaps of any {@code NavigableMap} must implement the {@code
  * NavigableMap} interface.
+ * 可以按升序或降序键访问和遍历NavigableMap。DescendingMap方法返回的map视图将所有关系和方向方法的含义都颠倒了。
+ * 上升操作和视图的性能可能比下降操作和视图的性能更快。subMap，headMap和tailMap方法与同名的SortedMap方法的不同之处在于，
+ * 它们接受附加的参数来描述下限和上限是包含式还是排除式。任何NavigableMap的子图都必须实现NavigableMap接口。
  *
  * <p>This interface additionally defines methods {@code firstEntry},
  * {@code pollFirstEntry}, {@code lastEntry}, and
  * {@code pollLastEntry} that return and/or remove the least and
  * greatest mappings, if any exist, else returning {@code null}.
+ * 此接口还定义了方法firstEntry，pollFirstEntry，lastEntry和pollLastEntry，这些方法返回和/或移除最小和最大映射（如果存在），否则返回null。
  *
  * <p>Implementations of entry-returning methods are expected to
  * return {@code Map.Entry} pairs representing snapshots of mappings
@@ -70,6 +77,8 @@ package java.util;
  * support the optional {@code Entry.setValue} method. Note however
  * that it is possible to change mappings in the associated map using
  * method {@code put}.
+ * 预期返回条目的方法的实现将返回Map.Entry对，它们表示映射生成时的快照，因此通常不支持可选的Entry.setValue方法。
+ * 但是请注意，可以使用put方法更改关联映射中的映射。
  *
  * <p>Methods
  * {@link #subMap(Object, Object) subMap(K, K)},
@@ -81,6 +90,8 @@ package java.util;
  * of this interface are encouraged to override these methods to return
  * {@code NavigableMap}.  Similarly,
  * {@link #keySet()} can be overriden to return {@code NavigableSet}.
+ * 指定了subMap（K，K），headMap（K）和tailMap（K）方法以返回SortedMap，以允许对SortedMap的现有实现进行兼容改造以实现NavigableMap，
+ * 但是鼓励此接口的扩展和实现重写这些方法。返回NavigableMap。同样，可以覆盖SortedMap.keySet（）以返回NavigableSet。
  *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">

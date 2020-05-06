@@ -34,7 +34,7 @@ import sun.misc.SharedSecrets;
  * operations common to all reference objects.  Because reference objects are
  * implemented in close cooperation with the garbage collector, this class may
  * not be subclassed directly.
- *
+ * 参考对象的抽象基类。此类定义所有参考对象共有的操作。由于引用对象是与垃圾回收器紧密协作实现的，因此此类不能直接子类化。
  * @author   Mark Reinhold
  * @since    1.2
  */
@@ -42,7 +42,7 @@ import sun.misc.SharedSecrets;
 public abstract class Reference<T> {
 
     /* A Reference instance is in one of four possible internal states:
-     *
+     *    引用实例处于四种可能的内部状态之一：
      *     Active: Subject to special treatment by the garbage collector.  Some
      *     time after the collector detects that the reachability of the
      *     referent has changed to the appropriate state, it changes the
@@ -50,21 +50,27 @@ public abstract class Reference<T> {
      *     whether or not the instance was registered with a queue when it was
      *     created.  In the former case it also adds the instance to the
      *     pending-Reference list.  Newly-created instances are Active.
+     *     活动：由垃圾收集器进行特殊处理。收集器检测到引用对象的可到达性已更改为适当的状态后，
+     *    会根据实例在创建时是否向队列注册了实例，将实例的状态更改为“待处理”或“非活动”。在前一种情况下，
+     *    它还将实例添加到“未决引用”列表中。新创建的实例处于活动状态。
      *
      *     Pending: An element of the pending-Reference list, waiting to be
      *     enqueued by the Reference-handler thread.  Unregistered instances
      *     are never in this state.
+     *      待处理：待处理引用列表中的元素，等待被引用处理程序线程排队。未注册的实例永远不会处于此状态。
      *
      *     Enqueued: An element of the queue with which the instance was
      *     registered when it was created.  When an instance is removed from
      *     its ReferenceQueue, it is made Inactive.  Unregistered instances are
      *     never in this state.
+     *     排队：创建实例时向其注册实例的队列元素。将实例从其ReferenceQueue中删除后，该实例将变为非活动状态。未注册的实例永远不会处于此状态。
      *
      *     Inactive: Nothing more to do.  Once an instance becomes Inactive its
      *     state will never change again.
+     *      不活动：无事可做。一旦实例变为非活动状态，其状态将不再改变。
      *
      * The state is encoded in the queue and next fields as follows:
-     *
+     *      状态在队列和下一个字段中编码如下：
      *     Active: queue = ReferenceQueue with which instance is registered, or
      *     ReferenceQueue.NULL if it was not registered with a queue; next =
      *     null.
@@ -81,12 +87,16 @@ public abstract class Reference<T> {
      * to determine whether a Reference instance requires special treatment: If
      * the next field is null then the instance is active; if it is non-null,
      * then the collector should treat the instance normally.
+     * 使用此方案，收集器仅需要检查下一个字段即可确定Reference实例是否需要特殊处理：
+     * 如果下一个字段为null，则该实例处于活动状态；否则，该实例处于活动状态。如果它为非null，则收集器应正常处理该实例。
      *
      * To ensure that a concurrent collector can discover active Reference
      * objects without interfering with application threads that may apply
      * the enqueue() method to those objects, collectors should link
      * discovered objects through the discovered field. The discovered
      * field is also used for linking Reference objects in the pending list.
+     * 为了确保并发的收集器可以发现活动的Reference对象而不会干扰可能将enqueue（）方法应用于这些对象的应用程序线程，
+     * 收集器应通过发现字段链接发现的对象。发现字段还用于链接未决列表中的引用对象。
      */
 
     private T referent;         /* Treated specially by GC */

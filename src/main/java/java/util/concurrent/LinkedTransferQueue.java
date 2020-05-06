@@ -53,6 +53,8 @@ import java.util.function.Consumer;
  * element that has been on the queue the longest time for some
  * producer.  The <em>tail</em> of the queue is that element that has
  * been on the queue the shortest time for some producer.
+ *  基于链接节点的无界TransferQueue。此队列针对任何给定的生产者对元素FIFO（先进先出）进行排序。
+ *  队列的开头是某个生产者在队列中停留时间最长的元素。队列的尾部是某个生产者最短时间进入队列的元素。
  *
  * <p>Beware that, unlike in most collections, the {@code size} method
  * is <em>NOT</em> a constant-time operation. Because of the
@@ -65,6 +67,9 @@ import java.util.function.Consumer;
  * to be performed atomically. For example, an iterator operating
  * concurrently with an {@code addAll} operation might view only some
  * of the added elements.
+ * 注意，与大多数集合不同，size方法不是固定时间操作。由于这些队列的异步性质，确定当前元素数需要对元素进行遍历，
+ * 因此，如果在遍历期间修改此集合，可能会报告不准确的结果。此外，不能保证批量操作addAll，removeAll，retainAll，
+ * containsAll，equals和toArray是原子执行的。例如，与addAll操作并发操作的迭代器可能只查看某些添加的元素。
  *
  * <p>This class and its iterator implement all of the
  * <em>optional</em> methods of the {@link Collection} and {@link
@@ -80,7 +85,10 @@ import java.util.function.Consumer;
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
- *
+ *此类及其迭代器实现Collection和Iterator接口的所有可选方法。
+ * 内存一致性影响：与其他并发集合一样，
+ * 在将对象放入LinkedTransferQueue中之前，线程中的操作发生在访问或从另一个线程中的LinkedTransferQueue中删除该元素之后的操作之前。
+ * 此类是Java Collections Framework的成员。
  * @since 1.7
  * @author Doug Lea
  * @param <E> the type of elements held in this collection
@@ -115,6 +123,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * points to the last node on the queue (or again null if
      * empty). For example, here is a possible queue with four data
      * elements:
+     * 由Scherer和Scott（http://www.cs.rice.edu/~wns1/papers/2004-DISC-DDS.pdf）引入的双重队列是（链接的）队列，其中的节点可以表示数据或请求。
+     * 当线程尝试使数据节点入队，但遇到请求节点时，它将“匹配”并删除它；反之亦然。阻塞双队列安排使排队未匹配请求的线程阻塞，直到其他线程提供匹配为止。
+     * 双同步队列（请参见Scherer，Lea和Scott http://www.cs.rochester.edu/u/scott/papers/2009_Scherer_CACM_SSQ.pdf）还安排了使不匹配数据排队
+     * 的线程也会阻塞。根据呼叫者的指示，双重传输队列支持所有这些模式。可以使用Michael＆Scott（M＆S）无锁队列算法（
+     * http://www.cs.rochester.edu/u/scott/papers/1996_PODC_queues.pdf）的变体来实现FIFO双队列。它维护两个指针字段“ head”，
+     * 它们指向一个（匹配的）节点，该节点又指向第一个实际的（不匹配的）队列节点（如果为空，则为null）；和“ tail”指向队列的最后一个节点
+     * （如果为空，则再次为null）。例如，这是一个可能的队列，其中包含四个数据元素：
      *
      *  head                tail
      *    |                   |
@@ -130,7 +145,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * http://people.csail.mit.edu/edya/publications/OptimisticFIFOQueue-journal.pdf).
      * However, the nature of dual queues enables a simpler tactic for
      * improving M&S-style implementations when dual-ness is needed.
-     *
+     *众所周知，在维护（通过CAS）这些头和尾指针时，M＆S队列算法容易受到可伸缩性和开销的限制。
+     * 这就导致了减少竞争的变体的发展，例如消除数组（请参见Moir等人，http://portal.acm.org/citation.cfm?id=1074013）
+     * 和乐观的后向指针（请参见Ladan-Mozes和Shavit，：//people.csail.mit.edu/edya/publications/OptimisticFIFOQueue-journal.pdf）。
+     * 但是，双重队列的性质使得在需要双重性时可以采用更简单的策略来改进M＆S样式的实现。
      * In a dual queue, each node must atomically maintain its match
      * status. While there are other possible variants, we implement
      * this here as: for a data-mode node, matching entails CASing an
@@ -145,6 +163,11 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * variation of this idea applies even for non-dual queues that
      * support deletion of interior elements, such as
      * j.u.c.ConcurrentLinkedQueue.)
+     * 在双队列中，每个节点必须自动保持其匹配状态。尽管还有其他可能的变体，但我们在这里实现为：对于数据模式节点，
+     * 匹配需要将“ item”字段从非空数据值进行CAS匹配，反之亦然；对于请求节点，反之亦然空为数据值。
+     * （请注意，这种类型的队列的线性化属性易于验证-元素通过链接可用，而通过匹配不可用。）与普通M＆S队列相比，
+     * 双队列的此属性需要每个enq /额外一次成功的原子操作Deq对。但是，它还支持队列维护机制的低成本变体。
+     * （这种想法的变体甚至适用于支持删除内部元素的非双重队列，例如j.u.c.ConcurrentLinkedQueue。）
      *
      * Once a node is matched, its match status can never again
      * change.  We may thus arrange that the linked list of them
@@ -160,6 +183,11 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * initially empty).  While this would be a terrible idea in
      * itself, it does have the benefit of not requiring ANY atomic
      * updates on head/tail fields.
+     * 节点匹配后，其匹配状态将永远不会再改变。因此，我们可以安排它们的链表包含零个或多个匹配节点的前缀，
+     * 后跟零个或多个不匹配节点的后缀。（请注意，前缀和后缀都允许为零长度，这又意味着我们不使用虚拟头。）
+     * 如果我们不关心时间或空间效率，则可以通过以下方式正确执行入队和出队操作：从指针遍历到初始节点；
+     * 对匹配中的第一个不匹配节点的项进行CAS处理，对追加中的尾随节点的下一个字段进行CAS处理。（
+     * 加上最初装空的一些特殊外壳）。尽管这本身就是一个可怕的想法，但它的好处是不需要在头/尾字段进行任何原子更新。
      *
      * We introduce here an approach that lies between the extremes of
      * never versus always updating queue (head and tail) pointers.
@@ -168,6 +196,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * nodes, versus the reduced overhead and contention of fewer
      * updates to queue pointers. For example, a possible snapshot of
      * a queue is:
+     * 我们在这里介绍一种介于永不与总是更新队列（头和尾）指针之间的方法。在有时需要额外的遍历步骤来定位第一个和/
+     * 或最后一个不匹配的节点之间进行权衡，这与减少的开销和争用较少的队列指针争用之间进行了权衡。例如，队列的可能快照是：
      *
      *  head           tail
      *    |              |
@@ -181,6 +211,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * over a range of platforms. Larger values introduce increasing
      * costs of cache misses and risks of long traversal chains, while
      * smaller values increase CAS contention and overhead.
+     * 对于此“松弛”的最佳值（“ head”的值与第一个不匹配节点之间的目标最大距离，类似地对于“ tail”而言）是一个经验问题。
+     * 我们发现，在1-3范围内使用非常小的常数在各种平台上效果最佳。较大的值会增加高速缓存未命中的成本，并会带来较长的遍历链风险，而较小的值会增加CAS争用和开销。
      *
      * Dual queues with slack differ from plain M&S dual queues by
      * virtue of only sometimes updating head or tail pointers when

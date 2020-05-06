@@ -30,6 +30,7 @@ package java.lang.ref;
  * Soft reference objects, which are cleared at the discretion of the garbage
  * collector in response to memory demand.  Soft references are most often used
  * to implement memory-sensitive caches.
+ * 软引用对象，垃圾回收器会根据内存需求酌情清除这些对象。软引用最常用于实现对内存敏感的缓存。
  *
  * <p> Suppose that the garbage collector determines at a certain point in time
  * that an object is <a href="package-summary.html#reachability">softly
@@ -39,6 +40,9 @@ package java.lang.ref;
  * of strong references.  At the same time or at some later time it will
  * enqueue those newly-cleared soft references that are registered with
  * reference queues.
+ * 假设垃圾收集器在某个时间点确定可以轻柔地访问对象。那时，它可以选择原子地清除对该对象的所有软引用，
+ * 以及对所有其他软可达的对象的所有软引用，这些对象都可以通过一系列强引用从该对象到达。
+ * 同时或在以后的某个时间，它将排队那些已在参考队列中注册的新清除的软参考。
  *
  * <p> All soft references to softly-reachable objects are guaranteed to have
  * been cleared before the virtual machine throws an
@@ -47,6 +51,9 @@ package java.lang.ref;
  * of such references to different objects will be cleared.  Virtual machine
  * implementations are, however, encouraged to bias against clearing
  * recently-created or recently-used soft references.
+ * 在虚拟机引发OutOfMemoryError之前，确保已清除所有对可软访问对象的软引用。否则，
+ * 清除软引用的时间或清除对不同对象的一组此类引用的时间将不受任何限制。但是，
+ * 鼓励虚拟机实现偏向于清除最近创建或最近使用的软引用。
  *
  * <p> Direct instances of this class may be used to implement simple caches;
  * this class or derived subclasses may also be used in larger data structures
@@ -56,6 +63,9 @@ package java.lang.ref;
  * prevent its most recently used entries from being discarded by keeping
  * strong referents to those entries, leaving the remaining entries to be
  * discarded at the discretion of the garbage collector.
+ * 此类的直接实例可用于实现简单的缓存；此类或派生的子类也可以在较大的数据结构中使用，
+ * 以实现更复杂的缓存。只要软引用的引用可以很强地到达（即实际上正在使用），就不会清除该软引用。
+ * 因此，复杂的高速缓存可以例如通过保持对那些条目的强引用来防止其最近使用的条目被丢弃，而其余条目则由垃圾收集器来决定丢弃。
  *
  * @author   Mark Reinhold
  * @since    1.2

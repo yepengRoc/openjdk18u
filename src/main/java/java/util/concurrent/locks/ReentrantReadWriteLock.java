@@ -463,10 +463,19 @@ public class ReentrantReadWriteLock
              */
             Thread current = Thread.currentThread();
             int c = getState();
+            //已经有写锁了，或者获取写锁的线程不是当前线程，则在AQS中执行入队操作
             if (exclusiveCount(c) != 0 &&
                 getExclusiveOwnerThread() != current)
                 return -1;
-            int r = sharedCount(c);
+            int r = sharedCount(c);//获取读锁数量
+            /**
+             * 读锁是否应该阻塞，阻塞的前提是有前驱
+             *
+             * 如果没有前驱。就它一个
+             *
+             * 公平模式下，是看头结点的下一个节点是否存在，存在的线程是否是当前线程
+             * 非公平模式下，是看头结点的下一个节点是否存在。存在则阻塞
+             */
             if (!readerShouldBlock() &&
                 r < MAX_COUNT &&
                 compareAndSetState(c, c + SHARED_UNIT)) {
@@ -485,6 +494,7 @@ public class ReentrantReadWriteLock
                 }
                 return 1;
             }
+            //如果不阻塞。则直接获取
             return fullTryAcquireShared(current);
         }
 

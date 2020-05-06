@@ -30,7 +30,7 @@ import java.util.function.Consumer;
 /**
  * Reference queues, to which registered reference objects are appended by the
  * garbage collector after the appropriate reachability changes are detected.
- *
+ * 在检测到适当的可达性更改之后，垃圾收集器将已注册参考对象附加到参考队列。
  * @author   Mark Reinhold
  * @since    1.2
  */

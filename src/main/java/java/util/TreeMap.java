@@ -40,6 +40,8 @@ import java.util.function.Consumer;
  * {@code containsKey}, {@code get}, {@code put} and {@code remove}
  * operations.  Algorithms are adaptations of those in Cormen, Leiserson, and
  * Rivest's <em>Introduction to Algorithms</em>.
+ * 基于红黑树的NavigableMap实现。根据映射键的自然顺序或在映射创建时提供的Comparator对映射进行排序，具体取决于所使用的构造函数。
+ * 此实现为containsKey，get，put和remove操作提供了保证的log（n）时间成本。算法是对Cormen，Leiserson和Rivest的算法介绍中的算法的改编。
  *
  * <p>Note that the ordering maintained by a tree map, like any sorted map, and
  * whether or not an explicit comparator is provided, must be <em>consistent
@@ -53,6 +55,10 @@ import java.util.function.Consumer;
  * of a sorted map <em>is</em> well-defined even if its ordering is
  * inconsistent with {@code equals}; it just fails to obey the general contract
  * of the {@code Map} interface.
+ * 请注意，如果树排序图要正确实现Map接口，则树排序图所维护的顺序（与任何排序的映射图一样）以及是否提供显式比较器必须与equals一致。
+ * （有关与equals一致的精确定义，请参见Comparable或Comparator。）之所以这样，是因为Map接口是根据equals操作定义的，
+ * 但是排序后的map使用其compareTo（或compare）方法执行所有键比较，因此两个从已排序映射的角度来看，此方法认为相等的键是相等的。
+ * 排序后的映射的行为是明确定义的，即使其排序与equals不一致也是如此；它只是不遵守Map接口的一般约定。
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
  * If multiple threads access a map concurrently, and at least one of the
@@ -67,6 +73,9 @@ import java.util.function.Consumer;
  * method.  This is best done at creation time, to prevent accidental
  * unsynchronized access to the map: <pre>
  *   SortedMap m = Collections.synchronizedSortedMap(new TreeMap(...));</pre>
+ *   请注意，此实现未同步。如果多个线程同时访问一个映射，并且至少有一个线程在结构上修改该映射，则必须在外部进行同步。
+ *   （结构修改是添加或删除一个或多个映射的任何操作；仅更改与现有键相关联的值不是结构修改。）通常通过在自然封装了map的某个对象上进行同步来实现。
+ *   如果不存在这样的对象，则应使用Collections.synchronizedSortedMap方法“包装”map。最好在创建时完成此操作，以防止意外不同步地访问map：
  *
  * <p>The iterators returned by the {@code iterator} method of the collections
  * returned by all of this class's "collection view methods" are
@@ -90,6 +99,12 @@ import java.util.function.Consumer;
  * produced. They do <strong>not</strong> support the {@code Entry.setValue}
  * method. (Note however that it is possible to change mappings in the
  * associated map using {@code put}.)
+ * 由此类的所有“集合视图方法”返回的集合的迭代器方法返回的迭代器都是快速失败的：如果在创建迭代器后的任何时间对结构进行结构修改，
+ * 则除了通过迭代器自己的remove之外，都可以通过其他方式进行方法，迭代器将抛出ConcurrentModificationException。
+ * 因此，面对并发修改，迭代器会快速干净地失败，而不会在未来的不确定时间内冒任意，不确定的行为的风险。
+ * 注意，迭代器的快速失败行为无法得到保证，因为通常来说，在存在不同步的并发修改的情况下，不可能做出任何严格的保证。
+ * 快速失败的迭代器会尽最大努力抛出ConcurrentModificationException。因此，编写依赖于此异常的程序的正确性是错误的：迭代器的快速失败行为仅应用于检测错误。
+ * 此类中的方法返回的所有Map.Entry对及其视图均表示生成映射时的快照。它们不支持Entry.setValue方法。（但是请注意，可以使用put更改关联映射中的映射。）
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">

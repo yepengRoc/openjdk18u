@@ -83,6 +83,9 @@ import java.util.stream.Stream;
  * in a way that prevents all access.  This class is fully
  * interoperable with {@code Hashtable} in programs that rely on its
  * thread safety but not on its synchronization details.
+ * 一个哈希表，它支持检索的完全并发性和更新的高期望并发性。此类遵循与Hashtable相同的功能规范，
+ * 并且包括与Hashtable的每个方法相对应的方法的版本。但是，即使所有操作都是线程安全的，检索操作也不需要进行锁定，
+ * 并且不支持以阻止所有访问的方式锁定整个表。在依赖于其线程安全性但不依赖于其同步详细信息的程序中，此类可以与Hashtable完全互操作。
  *
  * <p>Retrieval operations (including {@code get}) generally do not
  * block, so may overlap with update operations (including {@code put}
@@ -104,6 +107,12 @@ import java.util.stream.Stream;
  * Otherwise the results of these methods reflect transient states
  * that may be adequate for monitoring or estimation purposes, but not
  * for program control.
+ * 检索操作（包括get）通常不会阻塞，因此可能与更新操作（包括put和remove）重叠。检索反映了自启动以来最新完成的更新操作的结果。
+ * （更正式地说，给定键的更新操作与该键的任何（非空）检索报告更新后的值之间具有事前关联。）对于诸如putAll和clear的聚合操作，
+ * 并发检索可能反映插入或删除。只有一些条目。同样，迭代器，拆分器和枚举返回的元素反映了在创建迭代器/枚举时或此后某个时刻哈希表的状态。
+ * 他们不抛出ConcurrentModificationException。但是，迭代器被设计为一次只能由一个线程使用。请记住，包括大小，
+ * isEmpty和containsValue在内的聚合状态方法的结果通常仅在映射未在其他线程中进行并发更新时才有用。否则，
+ * 这些方法的结果将反映可能足以用于监视或估计目的但不适用于程序控制的瞬态。
  *
  * <p>The table is dynamically expanded when there are too many
  * collisions (i.e., keys that have distinct hash codes but fall into
@@ -126,12 +135,20 @@ import java.util.stream.Stream;
  * {@code hashCode()} is a sure way to slow down performance of any
  * hash table. To ameliorate impact, when keys are {@link Comparable},
  * this class may use comparison order among keys to help break ties.
+ * 当发生太多冲突（即键具有不同的哈希码但以表大小为模的同一时隙）时，将动态扩展表，并且预期平均效果是每个映射大约维护两个bin
+ * （对应于0.75负载）调整大小的系数阈值）。添加和删​​除映射时，此平均值附近可能会有很大的差异，但是总的来说，这保持了哈希表的公认的时间/空间权衡。
+ * 但是，调整此哈希表或任何其他类型的哈希表的大小可能是一个相对较慢的操作。如果可能，最好将大小估计值作为可选的initialCapacity构造函数参数提供。
+ * 附加的可选loadFactor构造函数参数提供了另一种自定义初始表容量的方法，方法是指定表密度，该密度将用于计算要为给定数量的元素分配的空间量。
+ * 另外，为了与此类的早期版本兼容，构造函数可以选择指定期望的concurrencyLevel作为内部调整的附加提示。请注意，使用许多具有完全相同的hashCode（）
+ * 的键是降低任何哈希表性能的肯定方法。为了改善影响，当键是Comparable时，此类可以使用键之间的比较顺序来帮助打破关系。
  *
  * <p>A {@link Set} projection of a ConcurrentHashMap may be created
  * (using {@link #newKeySet()} or {@link #newKeySet(int)}), or viewed
  * (using {@link #keySet(Object)} when only keys are of interest, and the
  * mapped values are (perhaps transiently) not used or all take the
  * same mapping value.
+ * 可以创建ConcurrentHashMap的Set投影（使用newKeySet（）或newKeySet（int）），或者在仅关注键且映射值（可能暂时）
+ * 不使用或全部取值的情况下（使用keySet（Object）进行查看）相同的映射值。
  *
  * <p>A ConcurrentHashMap can be used as scalable frequency map (a
  * form of histogram or multiset) by using {@link
@@ -139,13 +156,17 @@ import java.util.stream.Stream;
  * {@link #computeIfAbsent computeIfAbsent}. For example, to add a count
  * to a {@code ConcurrentHashMap<String,LongAdder> freqs}, you can use
  * {@code freqs.computeIfAbsent(k -> new LongAdder()).increment();}
+ * 通过使用LongAdder值并通过computeIfAbsent进行初始化，可以将ConcurrentHashMap用作可伸缩的频率图（一种直方图或多集形式）。
+ * 例如，要将计数添加到ConcurrentHashMap <String，LongAdder>频率中，可以使用freqs.computeIfAbsent（k-> new LongAdder（））。increment（）;。
  *
  * <p>This class and its views and iterators implement all of the
  * <em>optional</em> methods of the {@link Map} and {@link Iterator}
  * interfaces.
+ * 此类及其视图和迭代器实现Map和Iterator接口的所有可选方法。
  *
  * <p>Like {@link Hashtable} but unlike {@link HashMap}, this class
  * does <em>not</em> allow {@code null} to be used as a key or value.
+ * 与Hashtable类似，但与HashMap不同，此类不允许将null用作键或值。
  *
  * <p>ConcurrentHashMaps support a set of sequential and parallel bulk
  * operations that, unlike most {@link Stream} methods, are designed
@@ -162,6 +183,11 @@ import java.util.stream.Stream;
  * computation is in progress; and except for forEach actions, should
  * ideally be side-effect-free. Bulk operations on {@link java.util.Map.Entry}
  * objects do not support method {@code setValue}.
+ * ConcurrentHashMaps支持一组顺序和并行的批量操作，与大多数Stream方法不同，该操作被设计为即使在其他线程同时更新的map上也可以安全且通常明智地应用。
+ * 例如，在计算共享注册表中值的快照摘要时。共有三种操作，每种都有四种形式，它们接受带有键，值，条目和（键，值）参数和/或返回值的函数。
+ * 因为ConcurrentHashMap的元素没有以任何特定的方式排序，并且可以在不同的并行执行中以不同的顺序进行处理，所以提供的函数的正确性不应该依赖于任何顺序，
+ * 也不应该依赖于任何其他对象或值，这些对象或值在运行时可能会瞬时改变。计算正在进行中；除了forEach动作外，理想情况下应无副作用。
+ * 对Map.Entry对象的批量操作不支持方法setValue。
  *
  * <ul>
  * <li> forEach: Perform a given action on each element.
@@ -191,6 +217,12 @@ import java.util.stream.Stream;
  * </ul>
  * </li>
  * </ul>
+ * forEach：对每个元素执行给定的操作。变体形式在执行操作之前对每个元素应用给定的转换。
+ * 搜索：返回在每个元素上应用给定函数的第一个可用的非空结果；找到结果时跳过进一步的搜索。
+ * 减少：累积每个元素。提供的归约函数不能依赖于排序（更正式地说，它应该是关联的和可交换的）。
+ * 有五种变体：平减。（由于没有对应的返回类型，因此（键，值）函数参数没有此方法的形式。）
+ * 映射的归约积累了应用于每个元素的给定函数的结果。
+ * 使用给定的基础值减少为标量双精度数，长整型和整型数。
  *
  * <p>These bulk operations accept a {@code parallelismThreshold}
  * argument. Methods proceed sequentially if the current map size is
@@ -202,6 +234,9 @@ import java.util.stream.Stream;
  * computations. Normally, you would initially choose one of these
  * extreme values, and then measure performance of using in-between
  * values that trade off overhead versus throughput.
+ * 这些批量操作接受parallelismThreshold参数。如果当前map的大小估计小于给定的阈值，则方法将按顺序进行。
+ * 使用Long.MAX_VALUE的值将抑制所有并行性。使用值1可以通过划分为足够的子任务来充分利用用于所有并行计算的ForkJoinPool.commonPool（）
+ * 来实现最大的并行性。通常，您最初会选择这些极值之一，然后使用权衡开销与吞吐量的中间值来衡量性能。
  *
  * <p>The concurrency properties of bulk operations follow
  * from those of ConcurrentHashMap: Any non-null result returned
@@ -220,6 +255,11 @@ import java.util.stream.Stream;
  * should be the identity element for the reduction). Most common
  * reductions have these properties; for example, computing a sum
  * with basis 0 or a minimum with basis MAX_VALUE.
+ * 批量操作的并发属性遵循ConcurrentHashMap的并发属性：从get（key）和相关访问方法返回的任何非空结果都与关联的插入或更新具有事前关系。
+ * 任何批量操作的结果都反映了这些每个元素关系的组成（但对于整个map而言，不一定是原子的，除非以某种方式已知它是静态的）。
+ * 相反，由于映射中的键和值永远不会为null，因此null可作为当前缺少任何结果的可靠原子指示。为了保持此属性，null用作所有非标量归约操作的隐式基础。
+ * 对于double，long和int版本，其基础应该是当与任何其他值组合时返回该其他值的基础（更正式地说，它应该是简化的标识元素）。最常见的还原具有这些特性。
+ * 例如，计算基数为0的总和或基数为MAX_VALUE的最小值。
  *
  * <p>Search and transformation functions provided as arguments
  * should similarly return null to indicate the lack of any result
@@ -231,12 +271,17 @@ import java.util.stream.Stream;
  * filterings by composing them yourself under this "null means
  * there is nothing there now" rule before using them in search or
  * reduce operations.
+ * 作为参数提供的搜索和转换功能应类似地返回null，以指示缺少任何结果（在这种情况下将不使用它）。在映射归约的情况下，
+ * 这还使转换能够用作过滤器，如果不应组合元素，则返回null（或者在原始专业化的情况下，返回基于身份的基础）。
+ * 您可以在搜索或归约运算中使用它们之前，根据““ null意味着现在什么也没有””规则将它们自己组合起来，从而创建复合转换和过滤。
  *
  * <p>Methods accepting and/or returning Entry arguments maintain
  * key-value associations. They may be useful for example when
  * finding the key for the greatest value. Note that "plain" Entry
  * arguments can be supplied using {@code new
  * AbstractMap.SimpleEntry(k,v)}.
+ * 接受和/或返回Entry参数的方法维护键-值关联。例如，当找到最大价值的钥匙时，它们可能会很有用。
+ * 请注意，可以使用新的AbstractMap.SimpleEntry（k，v）提供“普通”条目自变量。
  *
  * <p>Bulk operations may complete abruptly, throwing an
  * exception encountered in the application of a supplied
@@ -244,6 +289,8 @@ import java.util.stream.Stream;
  * concurrently executing functions could also have thrown
  * exceptions, or would have done so if the first exception had
  * not occurred.
+ * 批量操作可能会突然完成，从而引发所提供功能的应用程序中遇到的异常。处理此类异常时请记住，其他并发执行的函数也可能抛出异常，
+ * 或者如果没有发生第一个异常，则可能会抛出异常。
  *
  * <p>Speedups for parallel compared to sequential forms are common
  * but not guaranteed.  Parallel operations involving brief functions
@@ -252,8 +299,11 @@ import java.util.stream.Stream;
  * than the computation itself.  Similarly, parallelization may not
  * lead to much actual parallelism if all processors are busy
  * performing unrelated tasks.
+ * 与顺序形式相比，并行加速是常见的，但不能保证。如果并行化计算的基础工作比计算本身更昂贵，
+ * 则涉及小map上简短功能的并行操作的执行速度可能会比顺序形式慢。同样，如果所有处理器都在忙于执行无关的任务，那么并行化可能不会导致很多实际的并行性。
  *
  * <p>All arguments to all task methods must be non-null.
+ * 所有任务方法的所有参数都必须为非空。
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
@@ -277,7 +327,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * contention. Secondary goals are to keep space consumption about
      * the same or better than java.util.HashMap, and to support high
      * initial insertion rates on an empty table by many threads.
-     *
+     *此哈希表的主要设计目标是保持并发可读性（通常是get（）方法，还包括迭代器和相关方法），同时最大程度地减少更新争用。
+     * 次要目标是使空间消耗保持与java.util.HashMap相同或更好，并通过许多线程支持在空表上的高初始插入率。
      * This map usually acts as a binned (bucketed) hash table.  Each
      * key-value mapping is held in a Node.  Most nodes are instances
      * of the basic Node class with hash, key, value, and next
@@ -293,6 +344,11 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * fields. (These special nodes are either uncommon or transient,
      * so the impact of carrying around some unused fields is
      * insignificant.)
+     * 该映射通常充当装箱（存储桶）的哈希表。每个键值映射都保存在一个节点中。大多数节点是基本Node类的实例，
+     * 具有哈希，键，值和下一个字段。但是，存在各种子类：TreeNode被安排在平衡树中，而不是列表中。TreeBins拥有TreeNodes集的根。
+     * 在调整大小期间，ForwardingNodes放置在垃圾箱的顶部。在computeIfAbsent和相关方法中建立值时，ReservationNode用作占位符。
+     * TreeBin，ForwardingNode和ReservationNode类型不包含常规用户键，值或哈希，并且在搜索等过程中易于区分，
+     * 因为它们具有负的哈希字段以及空键和值字段。（这些特殊节点是不常见的或瞬态的，因此携带一些未使用的字段的影响微不足道。）
      *
      * The table is lazily initialized to a power-of-two size upon the
      * first insertion.  Each bin in the table normally contains a
@@ -301,6 +357,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * CASes.  Because there is no other way to arrange this without
      * adding further indirections, we use intrinsics
      * (sun.misc.Unsafe) operations.
+     * 该表在第一次插入时被延迟初始化为2的幂。表中的每个bin通常包含一个Node列表（大多数情况下，该列表只有零个或一个Node）。
+     * 表访问需要易失性/原子性读，写和CASes。由于没有其他方法可以在不增加其他间接调用的情况下进行安排，因此我们使用内部函数（sun.misc.Unsafe）。
      *
      * We use the top (sign) bit of Node hash fields for control
      * purposes -- it is available anyway because of addressing
@@ -316,6 +374,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * each bin, so instead use the first node of a bin list itself as
      * a lock. Locking support for these locks relies on builtin
      * "synchronized" monitors.
+     * 我们将Node哈希字段的最高（符号）位用于控制目的-由于寻址限制，它始终可用。带有负哈希字段的节点在map方法中经过特殊处理或忽略。
      *
      * Using the first node of a list as a lock does not by itself
      * suffice though: When a node is locked, any update must first
@@ -323,6 +382,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * retry if not. Because new nodes are always appended to lists,
      * once a node is first in a bin, it remains first until deleted
      * or the bin becomes invalidated (upon resizing).
+     * 但是，将列表的第一个节点用作锁定本身并不能满足要求：锁定节点时，任何更新都必须首先确认它仍然是锁定后的第一个节点，
+     * 否则请重试。由于新节点总是添加到列表中，因此一旦节点首次位于bin中，它将一直保持到删除或bin无效（调整大小后）。
      *
      * The main disadvantage of per-bin locks is that other update
      * operations on other nodes in a bin list protected by the same
@@ -336,7 +397,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * granularity. Ignoring variance, the expected occurrences of
      * list size k are (exp(-0.5) * pow(0.5, k) / factorial(k)). The
      * first values are:
-     *
+     *每个bin锁的主要缺点是，受相同锁保护的bin列表中其他节点上的其他更新操作可能会停止，例如，当用户equals（）或映射函数花费很长时间时。
+     * 但是，从统计学上讲，在随机哈希码下，这不是一个普遍的问题。
+     * 理想情况下，箱中节点的频率遵循泊松分布（http://en.wikipedia.org/wiki/Poisson_distribution），平均参数约为0.5（给定调整大小阈值0.75），
+     * 尽管由于调整粒度。忽略方差，列表大小k的预期出现次数是（exp（-0.5）* pow（0.5，k）/ factorial（k））。第一个值是：
      * 0:    0.60653066
      * 1:    0.30326533
      * 2:    0.07581633
@@ -350,6 +414,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      *
      * Lock contention probability for two threads accessing distinct
      * elements is roughly 1 / (8 * #elements) under random hashes.
+     * 在随机哈希下，两个线程访问不同元素的锁争用概率大约为1 /（8 * #elements）。
      *
      * Actual hash code distributions encountered in practice
      * sometimes deviate significantly from uniform randomness.  This
@@ -369,6 +434,12 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * TreeBin nodes (TreeNodes) also maintain the same "next"
      * traversal pointers as regular nodes, so can be traversed in
      * iterators in the same way.
+     * 在实践中遇到的实际哈希码分布有时会明显偏离统一的随机性。这包括N>（1 << 30）的情况，因此某些键必须发生冲突。
+     * 类似地，对于愚蠢或恶意的用法，其中多个密钥被设计为具有相同的哈希码或仅在被掩盖的高位上有所不同的哈希码。因此，
+     * 我们使用了二级策略，该策略在bin中的节点数超过阈值时适用。这些TreeBins使用平衡树来保存节点（红黑树的一种特殊形式），
+     * 将搜索时间限制为O（log N）。TreeBin中的每个搜索步骤的速度至少是常规列表中速度的两倍，但是考虑到N不能超过（1 << 64）
+     * （在地址用尽之前），因此可以合理地限制搜索步骤，锁定保持时间等只要键是可比较的（很常见-字符串，长整数等），
+     * 就可以使用常量（每次操作最多检查100个节点）。TreeBin节点（TreeNodes）还维护与常规节点相同的“下一个”遍历指针，因此可以在迭代器中以相同的方式遍历。
      *
      * The table is resized when occupancy exceeds a percentage
      * threshold (nominally, 0.75, but see below).  Any thread
@@ -395,6 +466,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * contains the next table as its key. On encountering a
      * forwarding node, access and update operations restart, using
      * the new table.
+     * 当占用率超过百分比阈值（标称值为0.75，但请参见下文）时，将调整表的大小。在启动线程分配并设置替换阵列之后，任何注意到bin满的线程都可以帮助调整大小。
+     * 但是，这些其他线程可能会进行插入操作，而不是停滞不前。使用TreeBins可以避免我们在调整大小时发生最坏情况下的过度填充影响。
+     * 调整大小是通过将垃圾箱从一个表一个接一个地转移到下一个表来进行的。但是，线程在这样做之前要求小的索引块进行传输（通过字段transferIndex）
+     * ，从而减少了争用。字段sizeCtl中的世代标记可确保调整大小不会重叠。因为我们使用的是2的幂，所以每个bin中的元素必须保持相同的索引，
+     * 或者以2的幂偏移。我们通过捕获旧节点可以重复使用的情况（因为它们的下一个字段不会更改）来消除不必要的节点创建。平均而言，当表加倍时，
+     * 只有大约六分之一需要克隆。一旦它们被并发遍历表中的任何读取器线程不再引用，它们替换的节点将立即被垃圾回收。传输后，
+     * 旧表容器仅包含一个特殊的转发节点（哈希字段为“ MOVED”），该节点包含下一个表作为其关键字。遇到转发节点时，将使用新表重新启动访问和更新操作。
      *
      * Each bin transfer requires its bin lock, which can stall
      * waiting for locks while resizing. However, because other
@@ -415,6 +493,12 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * So Traversers use a simple caching scheme to avoid creating so
      * many new TableStack nodes. (Thanks to Peter Levart for
      * suggesting use of a stack here.)
+     * 每次bin传输都需要其bin锁，该bin锁可能会在调整大小时停止等待锁。但是，由于其他线程可以加入并帮助调整大小而不是争夺锁，
+     * 因此随着调整大小的进展，平均聚合等待时间会缩短。转移操作还必须确保任何遍历都可以使用旧表和新表中的所有可访问bin。
+     * 这是通过从最后一个bin（table.length-1）到第一个bin进行部分安排的。看到转发节点后，遍历（请参见Traverser类）安排在不重新访问节点的情况下移至新表。
+     * 为了确保即使在无序移动时也不会跳过中间节点，在遍历过程中第一次遇到转发节点时会创建一个堆栈（请参见TableTable类），以在以后处理当前表时保持其位置。
+     * 这些保存/恢复机制的需求相对很少，但是当遇到一个转发节点时，通常会更多。因此，遍历器使用一种简单的缓存方案来避免创建许多新的TableStack节点。
+     * （感谢Peter Levart建议在此处使用堆栈。）
      *
      * The traversal scheme also applies to partial traversals of
      * ranges of bins (via an alternate Traverser constructor)
@@ -422,12 +506,15 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * operations give up if ever forwarded to a null table, which
      * provides support for shutdown-style clearing, which is also not
      * currently implemented.
-     *
+     *遍历方案也适用于部分范围的bin（通过备用Traverser构造函数），以支持分区聚合操作。同样，只读操作如果转发到空表也将放弃，
+     * 该操作提供了对关机样式清除的支持，该功能目前还没有实现。
      * Lazy table initialization minimizes footprint until first use,
      * and also avoids resizings when the first operation is from a
      * putAll, constructor with map argument, or deserialization.
      * These cases attempt to override the initial capacity settings,
      * but harmlessly fail to take effect in cases of races.
+     * 延迟表初始化可最大程度地减少首次使用之前的占用空间，并且当第一个操作来自putAll，带有map参数的构造函数或反序列化时，还避免了调整大小。
+     * 这些情况试图超越初始容量设置，但在比赛中无害地无法生效。
      *
      * The element count is maintained using a specialization of
      * LongAdder. We need to incorporate a specialization rather than
@@ -441,6 +528,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * distributions, the probability of this occurring at threshold
      * is around 13%, meaning that only about 1 in 8 puts check
      * threshold (and after resizing, many fewer do so).
+     * 元素计数使用LongAdder的特殊化来维护。我们需要合并一个专业化对象，而不仅仅是使用LongAdder来访问隐式竞争感应，
+     * 从而导致创建多个CounterCell。计数器机制避免了更新争用，但如果在并发访问期间读取得太频繁，则可能会遇到缓存崩溃的情况。
+     * 为避免经常阅读，仅在添加到已容纳两个或更多节点的容器中后，才尝试在竞争下调整大小。在统一的哈希分布下，在阈值处发生这种情况的可能性约为13％，
+     * 这意味着只有八分之一的位置放置了检查阈值（并且在调整大小之后，这样做的人要少得多）。
      *
      * TreeBins use a special form of comparison for search and
      * related operations (which is the main reason we cannot use
@@ -461,7 +552,12 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * (http://gee.cs.oswego.edu/dl/classes/collections/RBCell.java)
      * based in turn on Cormen, Leiserson, and Rivest "Introduction to
      * Algorithms" (CLR).
-     *
+     *TreeBins使用一种特殊的比较形式来进行搜索和相关操作（这是我们不能使用TreeMap等现有集合的主要原因）。TreeBins包含Comparable元素，
+     * 但可能包含其他元素，以及对于同一T可比较但不一定可比较的元素，因此我们无法在其中调用compareTo。为了解决这个问题，树主要是按哈希值排序，
+     * 然后按Comparable.compareTo排序（如果适用）。在节点上查找时，如果元素不可比较或比较为0，则在绑定哈希值的情况下，可能需要同时搜索左右子节点。
+     * （这对应于如果所有元素都是不可比较的并且具有散列哈希的完整列表搜索。）在插入时，为了保持重新平衡的总顺序（或此处要求的最接近），
+     * 我们比较类和identityHashCodes作为决胜局。红黑平衡代码从jdk之前的收藏集（http://gee.cs.oswego.edu/dl/classes/collections/RBCell.java）
+     * 更新而来，依次基于Cormen，Leiserson和Rivest算法”（CLR）。
      * TreeBins also require an additional locking mechanism.  While
      * list traversal is always possible by readers even during
      * updates, tree traversal is not, mainly because of tree-rotations
@@ -477,6 +573,11 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * next-pointers) until the lock becomes available or the list is
      * exhausted, whichever comes first. These cases are not fast, but
      * maximize aggregate expected throughput.
+     * TreeBins还需要其他锁定机制。尽管即使在更新过程中，读者始终可以遍历列表，但无法遍历树，
+     * 主要是因为树的旋转可能会更改根节点和/或其链接。TreeBins包括一个寄生在主要bin同步策略上的简单读写锁定机制：
+     * 与插入或删除相关的结构调整已被bin锁定（因此不能与其他编写器发生冲突），但必须等待正在进行的读取器完成。
+     * 由于只能有一个这样的服务员，因此我们使用一个简单的方案，即使用单个“服务员”字段来阻止作者。但是，读者永远不需要阻塞。
+     * 如果持有根锁，则它们将沿着慢速遍历路径（通过下一个指针）前进，直到锁可用或列表用完为止，以先到者为准。这些情况不是很快，但是会最大化合计预期吞吐量。
      *
      * Maintaining API and serialization compatibility with previous
      * versions of this class introduces several oddities. Mainly: We
@@ -486,10 +587,14 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * time that we can guarantee to honor it.) We also declare an
      * unused "Segment" class that is instantiated in minimal form
      * only when serializing.
+     * 与此类的早期版本保持API和序列化兼容性会带来一些奇怪的问题。主要是：我们保持不变，但未使用的构造函数参数引用了concurrencyLevel。
+     * 我们接受一个loadFactor构造函数参数，但仅将其应用于初始表容量（这是我们唯一可以保证兑现它的时间。）我们还声明了一个未使用的“段”类，
+     * 该类仅在序列化时以最小形式实例化。
      *
      * Also, solely for compatibility with previous versions of this
      * class, it extends AbstractMap, even though all of its methods
      * are overridden, so it is just useless baggage.
+     * 同样，仅出于与此类以前版本的兼容性的考虑，它扩展了AbstractMap，即使其所有方法都被覆盖，因此也只是无济于事。
      *
      * This file is organized to make things a little easier to follow
      * while reading than they might otherwise: First the main static
@@ -497,6 +602,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * methods (with a few factorings of multiple public methods into
      * internal ones), then sizing methods, trees, traversers, and
      * bulk operations.
+     * 该文件的组织结构使它们在阅读时比在其他情况下更易于理解：首先是主要的静态声明和实用程序，然后是字段，
+     * 然后是主要的公共方法（将多个公共方法分解成多个内部方法），然后调整大小。方法，树，遍历器和批量操作。
      */
 
     /* ---------------- Constants -------------- */
@@ -525,6 +632,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * The default concurrency level for this table. Unused but
      * defined for compatibility with previous versions of this class.
+     * 默认是支持16个线程并发
      */
     private static final int DEFAULT_CONCURRENCY_LEVEL = 16;
 
@@ -544,6 +652,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * than 2, and should be at least 8 to mesh with assumptions in
      * tree removal about conversion back to plain bins upon
      * shrinkage.
+     * 链表长度大于8则进行树化，前提是 整个数组的长度大于64，如果没有64，则进行扩容
      */
     static final int TREEIFY_THRESHOLD = 8;
 
@@ -551,6 +660,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * The bin count threshold for untreeifying a (split) bin during a
      * resize operation. Should be less than TREEIFY_THRESHOLD, and at
      * most 6 to mesh with shrinkage detection under removal.
+     * 树元素小于6 则转换成链表
      */
     static final int UNTREEIFY_THRESHOLD = 6;
 
@@ -568,6 +678,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * serves as a lower bound to avoid resizers encountering
      * excessive memory contention.  The value should be at least
      * DEFAULT_CAPACITY.
+     * 默认 支持16个线程扩容
      */
     private static final int MIN_TRANSFER_STRIDE = 16;
 
@@ -593,7 +704,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      */
     static final int MOVED     = -1; // hash for forwarding nodes
     static final int TREEBIN   = -2; // hash for roots of trees
-    static final int RESERVED  = -3; // hash for transient reservations
+    static final int RESERVED  = -3; // hash for transient reservations 暂时保留
     static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
 
     /** Number of CPUS, to place bounds on some sizings */
@@ -680,6 +791,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * cheapest possible way to reduce systematic lossage, as well as
      * to incorporate impact of the highest bits that would otherwise
      * never be used in index calculations because of table bounds.
+     * 将散列的较高位散布（XOR）较低，也将最高位强制为0。由于该表使用2的幂次掩码，所以仅在当前掩码上方的位中变化的哈希集将始终发生冲突。
+     * （众所周知的示例是在小表中包含连续整数的Float键集。）因此，我们应用了一种变换，将向下传播较高位的影响。在速度，
+     * 实用性和位扩展质量之间需要权衡。由于许多常见的哈希集已经合理分布（因此无法从扩展中受益），并且由于我们使用树来处理容器中的大量冲突集，
+     * 因此我们仅以最便宜的方式对一些移位后的位进行XOR，以减少系统损失，以及合并最高位的影响，否则由于表范围的限制，这些位将永远不会在索引计算中使用。
      */
     static final int spread(int h) {
         return (h ^ (h >>> 16)) & HASH_BITS;
@@ -748,6 +863,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * and so in principle require only release ordering, not
      * full volatile semantics, but are currently coded as volatile
      * writes to be conservative.
+     * 在调整大小时，易失性访问方法用于表元素以及进行中的下一个表的元素。选项卡参数的所有使用都必须由调用方检查为null。
+     * 所有调用者还偏执地预先检查tab的长度是否不为零（或等效检查），从而确保任何采用哈希值形式且以（length-1）开头的索引参数都是有效索引。
+     * 请注意，要纠正用户的任意并发错误，这些检查必须对局部变量进行操作，这将在下面说明某些奇怪的内联分配。请注意，
+     * 对setTabAt的调用始终在锁定区域内进行，因此原则上仅需要发布顺序，而不需要完全易失的语义，但是为了保守起见，当前将其编码为易失性写入。
      */
 
     @SuppressWarnings("unchecked")
@@ -770,7 +889,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * The array of bins. Lazily initialized upon first insertion.
      * Size is always a power of two. Accessed directly by iterators.
      */
-    transient volatile Node<K,V>[] table;
+    transient volatile Node<K,V>[] table;//是一个node数组
 
     /**
      * The next table to use; non-null only while resizing.
@@ -791,6 +910,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * when table is null, holds the initial table size to use upon
      * creation, or 0 for default. After initialization, holds the
      * next element count value upon which to resize the table.
+     * 表初始化和大小调整控制。如果为负，则表将被初始化或调整大小：-1用于初始化，否则-（1 +活动的调整大小线程数）。
+     * 否则，当table为null时，保留创建时要使用的初始表大小，或者默认为0。初始化之后，保留下一个要调整表大小的元素计数值。
      */
     private transient volatile int sizeCtl;
 
@@ -1015,18 +1136,18 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             Node<K,V> f; int n, i, fh;
             if (tab == null || (n = tab.length) == 0)
                 tab = initTable();
-            else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {
+            else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {//如果当前位置没有元素
                 if (casTabAt(tab, i, null,
                              new Node<K,V>(hash, key, value, null)))
                     break;                   // no lock when adding to empty bin
             }
-            else if ((fh = f.hash) == MOVED)
+            else if ((fh = f.hash) == MOVED)//如果当前位置的元素的hash = -1
                 tab = helpTransfer(tab, f);
             else {
                 V oldVal = null;
-                synchronized (f) {
-                    if (tabAt(tab, i) == f) {
-                        if (fh >= 0) {
+                synchronized (f) {//锁加载第一个元素上
+                    if (tabAt(tab, i) == f) {//再次检查第一个元素是否改变
+                        if (fh >= 0) {//hash大于0 说明有元素，是链表。
                             binCount = 1;
                             for (Node<K,V> e = f;; ++binCount) {
                                 K ek;
@@ -1038,6 +1159,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                         e.val = value;
                                     break;
                                 }
+                                //将元素挂到链表后
                                 Node<K,V> pred = e;
                                 if ((e = e.next) == null) {
                                     pred.next = new Node<K,V>(hash, key,
@@ -1046,7 +1168,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 }
                             }
                         }
-                        else if (f instanceof TreeBin) {
+                        else if (f instanceof TreeBin) {//将元素放入树中
                             Node<K,V> p;
                             binCount = 2;
                             if ((p = ((TreeBin<K,V>)f).putTreeVal(hash, key,
@@ -1059,7 +1181,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                     }
                 }
                 if (binCount != 0) {
-                    if (binCount >= TREEIFY_THRESHOLD)
+                    if (binCount >= TREEIFY_THRESHOLD)//如果链表中元素的个数大于树化阈值
                         treeifyBin(tab, i);
                     if (oldVal != null)
                         return oldVal;
@@ -1067,7 +1189,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
             }
         }
-        addCount(1L, binCount);
+        addCount(1L, binCount);//
         return null;
     }
 
@@ -2212,6 +2334,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * Returns the stamp bits for resizing a table of size n.
      * Must be negative when shifted left by RESIZE_STAMP_SHIFT.
+     *  返回用于调整大小为n的表的标记位。向左移动RESIZE_STAMP_SHIFT时必须为负。
      */
     static final int resizeStamp(int n) {
         return Integer.numberOfLeadingZeros(n) | (1 << (RESIZE_STAMP_BITS - 1));
@@ -2223,19 +2346,22 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     private final Node<K,V>[] initTable() {
         Node<K,V>[] tab; int sc;
         while ((tab = table) == null || tab.length == 0) {
-            if ((sc = sizeCtl) < 0)
+            if ((sc = sizeCtl) < 0)//如果sizeCtl为负数，说明已经有线程在扩容了。说明一次只能由一个线程进行扩容
                 Thread.yield(); // lost initialization race; just spin
-            else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {
+            else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {//没有则设置
                 try {
                     if ((tab = table) == null || tab.length == 0) {
                         int n = (sc > 0) ? sc : DEFAULT_CAPACITY;
                         @SuppressWarnings("unchecked")
                         Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n];
                         table = tab = nt;
+                        /**
+                         * sc是阈值，超过这个阈值则进行扩容  n- (n >>> 2) = n - n/4 = 0.75n
+                         */
                         sc = n - (n >>> 2);
                     }
                 } finally {
-                    sizeCtl = sc;
+                    sizeCtl = sc;//存储的是扩容阈值。
                 }
                 break;
             }
@@ -2250,11 +2376,19 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * after a transfer to see if another resize is already needed
      * because resizings are lagging additions.
      *
+     * 添加计数，如果表太小且尚未调整大小，则启动传输。如果已经调整大小，则在工作可用时帮助执行转移。
+     * 转移后重新检查占用率，以查看是否由于调整大小落后于其他调整而需要重新调整大小。
+     *
      * @param x the count to add
      * @param check if <0, don't check resize, if <= 1 only check if uncontended
      */
     private final void addCount(long x, int check) {
         CounterCell[] as; long b, s;
+        /**
+         * 第一次 counterCells 为null
+         *
+         */
+
         if ((as = counterCells) != null ||
             !U.compareAndSwapLong(this, BASECOUNT, b = baseCount, s = b + x)) {
             CounterCell a; long v; int m;
@@ -2270,12 +2404,16 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 return;
             s = sumCount();
         }
+        /**
+         * check 为当前桶中的元素个数
+         * s默认是0 sc默认也是0
+         */
         if (check >= 0) {
             Node<K,V>[] tab, nt; int n, sc;
             while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
                    (n = tab.length) < MAXIMUM_CAPACITY) {
                 int rs = resizeStamp(n);
-                if (sc < 0) {
+                if (sc < 0) {//正在扩容或初始化
                     if ((sc >>> RESIZE_STAMP_SHIFT) != rs || sc == rs + 1 ||
                         sc == rs + MAX_RESIZERS || (nt = nextTable) == null ||
                         transferIndex <= 0)
@@ -2371,7 +2509,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         if (nextTab == null) {            // initiating
             try {
                 @SuppressWarnings("unchecked")
-                Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n << 1];
+                Node<K,V>[] nt = (Node<K,V>[])new Node<?,?>[n << 1];//扩容两倍
                 nextTab = nt;
             } catch (Throwable ex) {      // try to cope with OOME
                 sizeCtl = Integer.MAX_VALUE;

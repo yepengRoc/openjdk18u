@@ -5,13 +5,14 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
+import src.test.java.java8sty.Person;
 import java.util.stream.Collectors;
 
 public class Sty005 {
 
     @Test
     public void test1(){
-        List<Person> listP = new ArrayList<>();
+        List<src.test.java.java8sty.Person> listP = new ArrayList<>();
 
         Person p1 = new Person("zs", 20);
         Person p2 = new Person("ls", 30);

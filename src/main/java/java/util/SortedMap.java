@@ -34,6 +34,9 @@ package java.util;
  * {@code entrySet}, {@code keySet} and {@code values} methods).
  * Several additional operations are provided to take advantage of the
  * ordering.  (This interface is the map analogue of {@link SortedSet}.)
+ * 进一步提供其键的总排序的Map。根据其键的自然顺序或通常在排序的map创建时提供的Comparator来对map进行排序。
+ * 遍历排序后的map的集合视图（由entrySet，keySet和values方法返回）时，将反映此顺序。提供了一些附加操作以利用订购的优势。
+ * （此接口是SortedSet的map类似物。）
  *
  * <p>All keys inserted into a sorted map must implement the {@code Comparable}
  * interface (or be accepted by the specified comparator).  Furthermore, all
@@ -43,6 +46,9 @@ package java.util;
  * the sorted map.  Attempts to violate this restriction will cause the
  * offending method or constructor invocation to throw a
  * {@code ClassCastException}.
+ * 插入已排序映射中的所有键都必须实现Comparable接口（或被指定的比较器接受）。
+ * 此外，所有此类键都必须相互可比较：k1.compareTo（k2）（或比较器.compare（k1，k2））
+ * 不得为已排序映射中的任何键k1和k2引发ClassCastException。尝试违反此限制将导致有问题的方法或构造函数调用引发ClassCastException。
  *
  * <p>Note that the ordering maintained by a sorted map (whether or not an
  * explicit comparator is provided) must be <em>consistent with equals</em> if
@@ -56,11 +62,16 @@ package java.util;
  * equal.  The behavior of a tree map <em>is</em> well-defined even if its
  * ordering is inconsistent with equals; it just fails to obey the general
  * contract of the {@code Map} interface.
+ * 请注意，如果排序后的映射要正确实现Map接口，则排序后的映射（无论是否提供显式比较器）所维护的顺序必须等于equals。（
+ * 有关与equals一致的精确定义，请参见Comparable接口或Comparator接口。）之所以这样，是因为Map接口是根据equals操作定义的，
+ * 但是排序后的map使用其compareTo（或compare）方法执行所有键比较。，因此从排序后的映射的角度来看，此方法认为相等的两个键是相等的。
+ * 树形图的行为是明确定义的，即使其顺序与equals不一致也是如此；它只是不遵守Map接口的一般约定。
  *
  * <p>All general-purpose sorted map implementation classes should provide four
  * "standard" constructors. It is not possible to enforce this recommendation
  * though as required constructors cannot be specified by interfaces. The
  * expected "standard" constructors for all sorted map implementations are:
+ * 所有通用排序的映射实现类都应提供四个“标准”构造函数。尽管由于接口无法指定所需的构造函数，所以无法实施此建议。所有排序的map实现的预期“标准”构造函数为：
  * <ol>
  *   <li>A void (no arguments) constructor, which creates an empty sorted map
  *   sorted according to the natural ordering of its keys.</li>
@@ -73,6 +84,10 @@ package java.util;
  *   creates a new sorted map with the same key-value mappings and the same
  *   ordering as the input sorted map.</li>
  * </ol>
+ * 1一个void（无参数）构造函数，该构造函数创建一个空的排序映射，该映射根据其键的自然顺序进行排序。
+ * 2一个具有Comparator类型的单个参数的构造函数，该构造函数创建一个空的已排序映射，该映射根据指定的比较器进行排序。
+ * 3具有单个Map类型参数的构造函数，该构造函数将创建一个新映射，该映射具有与其参数相同的键-值映射关系，并根据键的自然顺序进行排序。
+ * 4具有一个SortedMap类型的单个参数的构造函数，该构造函数将创建一个新的排序映射，并与输入的排序映射具有相同的键值映射和相同的顺序。
  *
  * <p><strong>Note</strong>: several methods return submaps with restricted key
  * ranges. Such ranges are <em>half-open</em>, that is, they include their low
@@ -85,12 +100,19 @@ package java.util;
  * containing all of the key-value mappings in {@code m} whose keys are
  * between {@code low} and {@code high}, inclusive:<pre>
  *   SortedMap&lt;String, V&gt; sub = m.subMap(low, high+"\0");</pre>
+ *   注意：几种方法会返回键范围受限的子图。这样的范围是半开的，也就是说，它们包括其低端点，
+ *   但不包括其高端点（如果适用）。如果您需要一个封闭范围（包括两个端点），并且键类型允许计算给定键的后继者，
+ *   则只需请求从lowEndpoint到后继者（highEndpoint）的子范围。例如，假设m是一个键为字符串的映射。以下成语获取一个视图，
+ *   其中包含m中的所有键-值映射，其键在低端和高端之间（包括端值）：
+ *   SortedMap<String, V> sub = m.subMap(low, high+"\0");
  *
  * A similar technique can be used to generate an <em>open range</em>
  * (which contains neither endpoint).  The following idiom obtains a
  * view containing all of the key-value mappings in {@code m} whose keys
  * are between {@code low} and {@code high}, exclusive:<pre>
  *   SortedMap&lt;String, V&gt; sub = m.subMap(low+"\0", high);</pre>
+ *   可以使用类似的技术来生成一个开放范围（不包含任何端点）。以下成语获取一个视图，该视图包含m中的所有键-值映射，其键在低和高之间（不包括）：
+ *   SortedMap<String, V> sub = m.subMap(low+"\0", high);
  *
  * <p>This interface is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">

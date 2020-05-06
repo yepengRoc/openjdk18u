@@ -63,6 +63,13 @@ import java.io.Serializable;
  * methods such as {@code equals}, {@code hashCode} and {@code
  * compareTo} because instances are expected to be mutated, and so are
  * not useful as collection keys.
+ * 一个或多个变量共同保持初始为零的长和。当跨线程竞争更新（方法add（long））时，变量集可能会动态增长以减少争用。
+ * 方法sum（）（或等效地，longValue（））返回保持变量总数的当前总和。
+ * 当多个线程更新用于诸如收集统计信息而不是用于细粒度的同步控制之类的公共和时，此类通常比AtomicLong更可取。在低更新争用下，两个类具有相似的特征。
+ * 但是在竞争激烈的情况下，此类的预期吞吐量会大大提高，但要消耗更多的空间。LongAdders可以与ConcurrentHashMap一起使用，
+ * 以维护可伸缩的频率图（直方图或多集的一种形式）。例如，要将计数添加到ConcurrentHashMap <String，LongAdder>频率中，如果还不存在，
+ * 则进行初始化，可以使用freqs.computeIfAbsent（k-> new LongAdder（））。increment（）;。此类扩展了Number，但未定义equals，
+ * hashCode和compareTo之类的方法，因为期望实例发生突变，因此它们不可用作集合键。
  *
  * @since 1.8
  * @author Doug Lea

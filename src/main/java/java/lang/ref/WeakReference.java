@@ -30,6 +30,7 @@ package java.lang.ref;
  * Weak reference objects, which do not prevent their referents from being
  * made finalizable, finalized, and then reclaimed.  Weak references are most
  * often used to implement canonicalizing mappings.
+ * 弱引用对象，这些对象不会阻止对其引用对象进行终结，终结和回收。弱引用最常用于实现规范化映射。
  *
  * <p> Suppose that the garbage collector determines at a certain point in time
  * that an object is <a href="package-summary.html#reachability">weakly
@@ -40,6 +41,9 @@ package java.lang.ref;
  * weakly-reachable objects to be finalizable.  At the same time or at some
  * later time it will enqueue those newly-cleared weak references that are
  * registered with reference queues.
+ * 假设垃圾收集器在某个时间点确定对象是弱可访问的。到那时，它将自动清除对该对象的所有弱引用，
+ * 以及对所有其他弱可达对象的弱引用，这些对象都可以通过一系列强引用和软引用从该对象到达。同时，
+ * 它将声明所有以前弱可及的对象都是可终结的。同时或稍后，它将把那些新近清除的弱引用加入队列，这些弱引用已在引用队列中注册。
  *
  * @author   Mark Reinhold
  * @since    1.2

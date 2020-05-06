@@ -103,6 +103,7 @@ import java.util.function.Function;
  * <em>not</em> permit the use of {@code null} keys or values because some
  * null return values cannot be reliably distinguished from the absence of
  * elements.
+ * 不允许null
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
@@ -125,6 +126,10 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * for the heavily-traversed index lists than can be used for the
      * base lists.  Here's a picture of some of the basics for a
      * possible list with 2 levels of index:
+     * 此类实现了树状的二维链接的跳过列表，其中索引级别在与保存数据的基本节点不同的节点中表示。
+     * 采用此方法而不是通常的基于数组的结构有两个原因：1）基于数组的实现似乎遇到更多的复杂性和开销
+     * 2）我们可以为遍历索引列表使用比用于基础索引更便宜的算法列表。
+     * 这是一张具有2级索引的可能列表的一些基础知识照片：
      *
      * Head nodes          Index nodes
      * +-+    right        +-+                      +-+
@@ -153,6 +158,11 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * insertions, and when traversing to keep track of triples
      * (predecessor, node, successor) in order to detect when and how
      * to unlink these deleted nodes.
+     * 基本列表使用HM链接有序集算法的变体。参见蒂姆·哈里斯（Tim Harris），
+     * “非阻塞链表的实用实现”，http：//www.cl.cam.ac.uk/~tlh20/publications.html和Maged Michael，
+     * “高性能动态无锁哈希表和列表-基于基础的集” http://www.research.ibm.com/people/m/michael/pubs.htm。
+     * 这些列表中的基本思想是在删除时标记已删除节点的“下一个”指针，以避免与并发插入发生冲突，并且在遍历以跟踪三元组
+     * （前驱，节点，后继）时进行标记，以检测何时以及如何取消链接这些已删除的节点。
      *
      * Rather than using mark-bits to mark list deletions (which can
      * be slow and space-intensive using AtomicMarkedReference), nodes
@@ -168,6 +178,11 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * because any search need only read ahead one more node than
      * otherwise required (to check for trailing marker) rather than
      * unmasking mark bits or whatever on each read.
+     * 而不是使用标记位来标记列表删除（使用AtomicMarkedReference可能会很慢并且占用大量空间），
+     * 而是使用直接CAS'able下一个指针。在删除时，它们没有标记指针，而是拼接在另一个节点中，
+     * 该节点可以看作是标记的指针（使用其他不可能的字段值指示）。使用普通节点的行为大致类似于标记指针的“盒装”实现，
+     * 但是仅当删除节点时才使用新节点，而不用于前夕链接。这需要更少的空间并支持更快的遍历。即使标记的引用是受更好支持的JVM，
+     * 使用此技术的遍历仍然可能更快，因为与任何其他搜索（检查尾随标记）相比，任何搜索只需要提前读取一个节点即可，而无需屏蔽标记位或每次读取时执行任何操作。
      *
      * This approach maintains the essential property needed in the HM
      * algorithm of changing the next-pointer of a deleted node so
@@ -179,6 +194,9 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * markers are rarely encountered during traversal and are
      * normally quickly garbage collected. (Note that this technique
      * would not work well in systems without garbage collection.)
+     * 此方法保留了更改删除节点的下一个指针的HM算法所需的基本属性，以便该节点的任何其他CAS都将失败，
+     * 但是通过更改指针以指向另一个节点而不是通过标记来实现该思想。尽管可以通过将标记节点定义为不包含键/值字段来进一步压缩空间，
+     * 但这不值得额外的类型测试开销。删除标记在遍历期间很少遇到，通常会很快被垃圾收集。（请注意，这种技术在没有垃圾收集的系统中不能很好地工作。）
      *
      * In addition to using deletion markers, the lists also use
      * nullness of value fields to indicate deletion, in a style
@@ -194,9 +212,14 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * mapping, which allows nodes to remain concurrently readable
      * even when deleted. Using any other marker value here would be
      * messy at best.)
+     * 除了使用删除标记外，列表还使用值字段的空值来表示删除，其样式类似于典型的惰性删除方案。如果节点的值为null，
+     * 则即使仍然可以访问它，也将在逻辑上将其删除并忽略。这样可以保持对并发替换与删除操作的适当控制-如果删除操作以空字段击败它，
+     * 则尝试进行的替换必须失败，并且删除操作必须返回该字段中保留的最后一个非空值。（注意：此处将Null而不是一些特殊的标记用于值字段，
+     * 因为它恰好与Map API要求相吻合，即如果没有映射，则get方法将返回null，这使节点即使删除也可以保持并发可读性。在这里使用其他任何标记值充其量都是麻烦的。）
      *
      * Here's the sequence of events for a deletion of node n with
      * predecessor b and successor f, initially:
+     * 以下是最初删除具有前身b和后继f的节点n的事件序列：
      *
      *        +------+       +------+      +------+
      *   ...  |   b  |------>|   n  |----->|   f  | ...
@@ -207,11 +230,12 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      *    the node consider this mapping to exist. However, other
      *    ongoing insertions and deletions might still modify
      *    n's next pointer.
+     * CAS n的值字段从非null到null。从这一点开始，没有遇到节点的公共操作都认为此映射存在。但是，其他正在进行的插入和删除操作仍可能会修改n的下一个指针。
      *
      * 2. CAS n's next pointer to point to a new marker node.
      *    From this point on, no other nodes can be appended to n.
      *    which avoids deletion errors in CAS-based linked lists.
-     *
+     *CAS n的下一个指向新标记节点的指针。从这一点开始，没有其他节点可以附加到n。这样可以避免基于CAS的链接列表中的删除错误。
      *        +------+       +------+      +------+       +------+
      *   ...  |   b  |------>|   n  |----->|marker|------>|   f  | ...
      *        +------+       +------+      +------+       +------+
@@ -219,6 +243,7 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * 3. CAS b's next pointer over both n and its marker.
      *    From this point on, no new traversals will encounter n,
      *    and it can eventually be GCed.
+     * CAS b在n及其标记上的下一个指针。从这一点开始，没有新的遍历将遇到n，并且最终可以对其进行GC。
      *        +------+                                    +------+
      *   ...  |   b  |----------------------------------->|   f  | ...
      *        +------+                                    +------+
@@ -234,6 +259,10 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * just (b, n, f), although the next field of a marker is
      * immutable, and once a next field is CAS'ed to point to a
      * marker, it never again changes, so this requires less care.
+     * 步骤1的失败会导致失败重试，原因是与其他操作的竞争失败。步骤2-3可能失败，因为在遍历具有空值的节点时注意到了其他一些线程，
+        并通过标记和/或取消链接来帮助了其他线程。这种帮助可以确保没有线程在等待删除线程的进展时被阻塞。使用标记节点会使辅助代码稍微复杂化，
+        因为遍历必须跟踪多达四个节点（b，n，marker，f）的一致读取，而不仅仅是（b，n，f），尽管标记的下一个字段是不变，
+        一旦下一个字段被CAS指向一个标记，它就再也不会改变，因此这需要较少的注意。
      *
      * Skip lists add indexing to this scheme, so that the base-level
      * traversals start close to the locations being found, inserted
@@ -242,6 +271,9 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * need to make sure base traversals start at predecessors (here,
      * b) that are not (structurally) deleted, otherwise retrying
      * after processing the deletion.
+     * 跳过列表为该方案添加了索引，因此基本级别遍历开始于要查找，
+     * 插入或删除的位置附近-通常，基本级别遍历仅遍历几个节点。除了需要确保基本遍历从没有（在结构上）删除的前任（此处为b）开始，否则不会改变基本算法，
+     * 否则在处理删除后重试。
      *
      * Index levels are maintained as lists with volatile next fields,
      * using CAS to link and unlink.  Races are allowed in index-list
@@ -263,6 +295,12 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * reduce other downstream failed CAS's enough to outweigh restart
      * cost.  This worsens the worst case, but seems to improve even
      * highly contended cases.
+     * 使用CAS链接和取消链接，将索引级别保留为具有可变下一个字段的列表。索引列表操作中允许使用竞争，这些操作可能（很少）无法链接到新的索引节点或将其删除。
+     * （我们当然不能对数据节点执行此操作。）但是，即使发生这种情况，索引列表仍保持排序，因此可以正确地用作索引。这可能会影响性能，
+     * 但是由于跳过列表无论如何都是概率性的，因此最终结果是在争用情况下，有效的“ p”值可能低于其标称值。而且竞赛窗口要保持足够小，
+     * 以至于在实践中，即使有很多争论，这些失败也是很少见的。由于建立索引，重试（针对基本列表和索引列表）相对便宜，这一事实允许对重试逻辑进行一些较小的简化。
+     * 在大多数“帮助”情况之后执行遍历重启。这并非总是严格必要的，但是隐式的退避往往有助于减少其他下游出现故障的CAS，足以抵消重启成本。
+     * 这会使最坏的情况恶化，但似乎甚至可以改善竞争激烈的情况。
      *
      * Unlike most skip-list implementations, index insertion and
      * deletion here require a separate traversal pass occurring after
@@ -284,6 +322,12 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * Pugh's Skip List Cookbook, sec 3.4).  The expected total space
      * requirement for a map is slightly less than for the current
      * implementation of java.util.TreeMap.
+     * 与大多数跳过列表实现不同，这里的索引插入和删除要求在基本级操作之后进行单独的遍历遍历，以添加或删除索引节点。这增加了单线程开销，
+     * 但是通过缩小干扰窗口来提高竞争性多线程性能，并允许删除以确保从公共删除操作返回后所有索引节点都将不可访问，
+     * 从而避免了不必要的垃圾保留。这在这里比在其他一些数据结构中更重要，因为我们不能使引用用户密钥的节点字段无效，
+     * 因为它们可能仍被其他正在进行的遍历读取。索引使用跳过列表参数，该参数在使用稀疏索引的同时保持良好的搜索性能：
+     * 硬连线参数k = 1，p = 0.5（请参见doPut方法）意味着大约四分之一的节点具有索引。在那些做到这一点的人中，一半有一个级别，
+     * 四分之一有两个级别，依此类推（请参阅Pugh的跳过列表食谱，第3.4节）。映射的预期总空间需求比java.util.TreeMap的当前实现略少。
      *
      * Changing the level of the index (i.e, the height of the
      * tree-like structure) also uses CAS. The head index has initial
@@ -314,7 +358,15 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * only, returning a base-level predecessor of the key. findNode()
      * finishes out the base-level search. Even with this factoring,
      * there is a fair amount of near-duplication of code to handle
-     * variants.
+     *
+     * 更改索引级别（即树状结构的高度）也使用CAS。头索引的初始级别/高度为1。创建高度大于当前级别的索引时，通过在新的最上面的头部上执行CAS，
+     * 可以为头部索引添加一个级别。为了在大量删除后保持良好的性能，如果最顶层未显示为空，则删除方法会尝试尝试减小高度。这可能会遇到一些种族，
+     * 在这些种族中有可能（但很少有）降低和“降低”某个级别，就像它即将包含一个索引（那样就永远不会遇到）。这不会对结构造成损害，
+     * 并且在实践中似乎比允许不受限制的级别增长更好。所有这些的代码比您想要的更为冗长。大多数操作需要定位元素（或插入元素的位置）。
+     * 不能很好地做到这一点的代码，因为后续使用需要快照前驱和/或后继和/或值字段，这些快照不能一次全部返回，
+     * 至少不能不创建另一个对象来保存它们-对于基本的内部搜索操作而言，创建这样的小对象是一个特别糟糕的主意，因为它增加了GC的开销。（
+     * 这是我希望Jav具有宏的少数几次。）相反，一些遍历代码与插入和删除操作交织在一起。处理所有重试条件的控制逻辑有时会有些曲折。大多数搜索分为2部分。
+     * findPredecessor（）仅搜索索引节点，返回键的基本级别的前任。findNode（完成了基本级别的搜索。即使有这个因素，也有相当多的重复代码来处理变量。
      *
      * To produce random values without interference across threads,
      * we use within-JDK thread local random support (via the
@@ -335,6 +387,12 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * (http://www.cs.yorku.ca/~mikhail/), Keir Fraser's thesis
      * (http://www.cl.cam.ac.uk/users/kaf24/), and Hakan Sundell's
      * thesis (http://www.cs.chalmers.se/~phs/).
+     * 为了在线程之间不产生干扰的情况下产生随机值，我们使用JDK内部线程本地随机支持（通过“辅助种子”，以避免与用户级别的ThreadLocalRandom发生干扰。）
+     * 此类的先前版本将不可比较的键包装在其比较器中在使用比较器与可比对象时模拟可比对象。但是，
+     * JVM现在似乎可以更好地处理将比较器与可比较的选择注入搜索循环的过程。静态方法cpr（comparator，x，y）用于所有比较，
+     * 只要比较器参数在循环外部设置（因此有时作为内部方法的参数传递）以避免字段重新读取，该方法就可以正常工作。有关与此算法共享至少两个功能的算法的说明，
+     * 请参见Mikhail Fomitchev的论文（http://www.cs.yorku.ca/~mikhail/），Keir Fraser的论文（http://www.cl.cam.ac.uk / users / kaf24 /）
+     * 和Hakan Sundell的论文（http://www.cs.chalmers.se/~phs/）。
      *
      * Given the use of tree-like index nodes, you might wonder why
      * this doesn't use some kind of search tree instead, which would
@@ -343,6 +401,8 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
      * algorithms for search trees. The immutability of the "down"
      * links of index nodes (as opposed to mutable "left" fields in
      * true trees) makes this tractable using only CAS operations.
+     * 考虑到使用树状索引节点，您可能想知道为什么它不使用某种搜索树，而是支持更快的搜索操作。
+     * 原因是没有已知的有效的无锁搜索树无插入和删除算法。索引节点“向下”链接的不变性（与真实树中可变的“左”字段相对）使仅使用CAS操作就可以做到这一点。
      *
      * Notation guide for local variables
      * Node:         b, n, f    for  predecessor, node, successor

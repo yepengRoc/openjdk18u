@@ -43,16 +43,21 @@ import java.util.function.Consumer;
  * When a key has been discarded its entry is effectively removed from the map,
  * so this class behaves somewhat differently from other <tt>Map</tt>
  * implementations.
+ * 基于哈希表的Map接口的实现，带有弱键。如果WeakHashMap中的条目不再是普通使用的键，
+ * 它将自动被删除。更准确地说，给定键的映射的存在不会阻止该键被垃圾收集器丢弃，即被终结化，终结和回收。
+ * 丢弃键后，其条目会从映射中有效删除，因此此类的行为与其他Map实现有所不同。
  *
  * <p> Both null values and the null key are supported. This class has
  * performance characteristics similar to those of the <tt>HashMap</tt>
  * class, and has the same efficiency parameters of <em>initial capacity</em>
  * and <em>load factor</em>.
+ * 空值和空键均受支持。该类的性能与HashMap类类似，并且具有相同的效率参数，即初始容量和负载因子。
  *
  * <p> Like most collection classes, this class is not synchronized.
  * A synchronized <tt>WeakHashMap</tt> may be constructed using the
  * {@link Collections#synchronizedMap Collections.synchronizedMap}
  * method.
+ * 像大多数集合类一样，此类也不同步。可以使用Collections.synchronizedMap方法构造一个同步的WeakHashMap。
  *
  * <p> This class is intended primarily for use with key objects whose
  * <tt>equals</tt> methods test for object identity using the
@@ -64,6 +69,9 @@ import java.util.function.Consumer;
  * as <tt>String</tt> instances.  With such recreatable key objects,
  * however, the automatic removal of <tt>WeakHashMap</tt> entries whose
  * keys have been discarded may prove to be confusing.
+ * 此类主要用于其equals方法使用==运算符测试对象标识的关键对象。一旦丢弃了这样的密钥，就永远无法重新创建它，
+ * 因此以后不可能在WeakHashMap中对该密钥进行查找，并且会惊讶地发现它的条目已被删除。此类将与其equals方法不基于对象标识的键对象
+ * （例如String实例）完美配合。但是，使用此类可重新创建的键对象，自动删除其键已被丢弃的WeakHashMap条目可能会造成混淆。
  *
  * <p> The behavior of the <tt>WeakHashMap</tt> class depends in part upon
  * the actions of the garbage collector, so several familiar (though not
@@ -82,11 +90,18 @@ import java.util.function.Consumer;
  * <tt>false</tt> for a key that previously appeared to be in the map, and
  * for successive examinations of the key set, the value collection, and
  * the entry set to yield successively smaller numbers of elements.
+ * WeakHashMap类的行为部分取决于垃圾回收器的操作，因此，一些熟悉的（虽然不是必需的）Map不变量对此类不成立。
+ * 因为垃圾收集器可以随时丢弃键，所以WeakHashMap的行为可能就像未知线程正在静默删除条目一样。特别是，
+ * 即使您在WeakHashMap实例上进行同步并且不调用其任何mutator方法，size方法也可能会随时间返回较小的值，
+ * isEmpty方法可能会返回false，然后返回true，containsKey方法会返回对于给定的键，为true，然后为false；
+ * 对于给定的键，get方法返回一个值，但之后返回null；对于put的方法，返回null；对于remove方法，
+ * 为先前似乎位于该键中的键，返回remove。映射，并用于键集，值集合和条目集的连续检查，以依次生成较小数量的元素。
  *
  * <p> Each key object in a <tt>WeakHashMap</tt> is stored indirectly as
  * the referent of a weak reference.  Therefore a key will automatically be
  * removed only after the weak references to it, both inside and outside of the
  * map, have been cleared by the garbage collector.
+ * WeakHashMap中的每个关键对象都作为弱引用的引用间接存储。因此，只有在垃圾回收器清除了映射内部和外部的弱引用之后，才会自动删除密钥。
  *
  * <p> <strong>Implementation note:</strong> The value objects in a
  * <tt>WeakHashMap</tt> are held by ordinary strong references.  Thus care
@@ -101,6 +116,10 @@ import java.util.function.Consumer;
  * <tt>WeakReferences</tt> before
  * inserting, as in: <tt>m.put(key, new WeakReference(value))</tt>,
  * and then unwrapping upon each <tt>get</tt>.
+ * 实施注意事项：WeakHashMap中的value对象由普通的强引用保存。因此，应注意确保值对象不会直接或间接强烈引用其自身的键，
+ * 因为这将防止键被丢弃。注意，值对象可以通过WeakHashMap本身间接引用其键；也就是说，值对象可以强烈地引用某个其他键对象，
+ * 而其关联的值对象又强烈地引用第一值对象的键。如果映射中的值不依赖于对它们持有强烈引用的映射，则一种解决方法是在插入之前将值本身包装在WeakReferences中，
+ * 例如：m.put（key，new WeakReference（value）），然后在每次获取时展开。
  *
  * <p>The iterators returned by the <tt>iterator</tt> method of the collections
  * returned by all of this class's "collection view methods" are
@@ -110,6 +129,9 @@ import java.util.function.Consumer;
  * ConcurrentModificationException}.  Thus, in the face of concurrent
  * modification, the iterator fails quickly and cleanly, rather than risking
  * arbitrary, non-deterministic behavior at an undetermined time in the future.
+ * 由此类的所有“集合视图方法”返回的集合的迭代器方法返回的迭代器都是快速失败的：
+ * 如果在创建迭代器后的任何时间对结构进行结构修改，则除了通过迭代器自己的remove之外，都可以通过其他方式进行方法，
+ * 迭代器将抛出ConcurrentModificationException。因此，面对并发修改，迭代器会快速干净地失败，而不会在未来的不确定时间内冒任意，不确定的行为的风险。
  *
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
@@ -118,6 +140,8 @@ import java.util.function.Consumer;
  * Therefore, it would be wrong to write a program that depended on this
  * exception for its correctness:  <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i>
+ * 注意，迭代器的快速失败行为无法得到保证，因为通常来说，在存在不同步的并发修改的情况下，不可能做出任何严格的保证。
+ * 快速失败的迭代器会尽最大努力抛出ConcurrentModificationException。因此，编写依赖于此异常的程序的正确性是错误的：迭代器的快速失败行为仅应用于检测错误。
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">

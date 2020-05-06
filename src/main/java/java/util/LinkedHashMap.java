@@ -41,12 +41,17 @@ import java.io.IOException;
  * reinserted into a map <tt>m</tt> if <tt>m.put(k, v)</tt> is invoked when
  * <tt>m.containsKey(k)</tt> would return <tt>true</tt> immediately prior to
  * the invocation.)
+ * Map接口的哈希表和链表实现，具有可预测的迭代顺序。此实现与HashMap的不同之处在于，它维护一个遍历其所有条目的双向链接列表。此链表定义了迭代顺序，
+ * 通常是将键插入映射的顺序（插入顺序）。请注意，如果将密钥重新插入到映射中，则插入顺序不会受到影响。（如果在调用之前m.containsKey（k）
+ * 即将返回true时调用了m.put（k，v），则将密钥k重新插入到映射m中。）
  *
  * <p>This implementation spares its clients from the unspecified, generally
  * chaotic ordering provided by {@link HashMap} (and {@link Hashtable}),
  * without incurring the increased cost associated with {@link TreeMap}.  It
  * can be used to produce a copy of a map that has the same order as the
  * original, regardless of the original map's implementation:
+ * 此实现使客户免于HashMap（和Hashtable）提供的未指定的，通常混乱的排序，而不会增加与TreeMap相关的成本。无论原始map的实现如何，
+ * 都可以使用它来生成与原始地图具有相同顺序的map副本：
  * <pre>
  *     void foo(Map m) {
  *         Map copy = new LinkedHashMap(m);
@@ -57,6 +62,7 @@ import java.io.IOException;
  * copies it, and later returns results whose order is determined by that of
  * the copy.  (Clients generally appreciate having things returned in the same
  * order they were presented.)
+ * 如果模块在输入上获取映射，将其复制并随后返回结果（其顺序由副本的顺序确定），则此技术特别有用。（客户通常希望按退货的顺序将其退回。）
  *
  * <p>A special {@link #LinkedHashMap(int,float,boolean) constructor} is
  * provided to create a linked hash map whose order of iteration is the order
@@ -73,10 +79,16 @@ import java.io.IOException;
  * <i>No other methods generate entry accesses.</i>  In particular, operations
  * on collection-views do <i>not</i> affect the order of iteration of the
  * backing map.
+ * 提供了一个特殊的构造函数来创建一个链接的哈希映射，其迭代顺序是其条目的最后访问顺序（从最近访问的到最近访问的顺序）（访问顺序）。
+ * 这种映射非常适合构建LRU缓存。调用put，putIfAbsent，get，getOrDefault，compute，computeIfAbsent，
+ * computeIfPresent或merge方法将导致对相应条目的访问（假定调用完成后该条目存在）。如果替换值，则replace方法仅导致对条目的访问。
+ * putAll方法为指定映射中的每个映射生成一个条目访问，其顺序为指定映射的条目集迭代器提供键-值映射。没有其他方法可以生成条目访问。
+ * 特别是，对集合视图的操作不会影响背景图的迭代顺序。
  *
  * <p>The {@link #removeEldestEntry(Map.Entry)} method may be overridden to
  * impose a policy for removing stale mappings automatically when new mappings
  * are added to the map.
+ * 可以重写removeEldestEntry（Map.Entry）方法，以强加一个策略，以便在将新映射添加到map时自动删除陈旧的映射。
  *
  * <p>This class provides all of the optional <tt>Map</tt> operations, and
  * permits null elements.  Like <tt>HashMap</tt>, it provides constant-time
@@ -89,6 +101,9 @@ import java.io.IOException;
  * of the map, regardless of its capacity.  Iteration over a <tt>HashMap</tt>
  * is likely to be more expensive, requiring time proportional to its
  * <i>capacity</i>.
+ * 此类提供所有可选的Map操作，并允许空元素。像HashMap一样，它为基本操作（添加，包含和删除）提供恒定时间的性能，假设哈希函数将元素正确地分布在存储桶中。
+ * 由于维护链表的开销增加，因此性能可能会略低于HashMap，但有一个例外：对LinkedHashMap的集合视图进行迭代需要的时间与map的大小成正比，而无论其容量如何。
+ * 在HashMap上进行迭代可能会更昂贵，需要的时间与其容量成正比。
  *
  * <p>A linked hash map has two parameters that affect its performance:
  * <i>initial capacity</i> and <i>load factor</i>.  They are defined precisely
@@ -96,6 +111,8 @@ import java.io.IOException;
  * excessively high value for initial capacity is less severe for this class
  * than for <tt>HashMap</tt>, as iteration times for this class are unaffected
  * by capacity.
+ * 链接的哈希映射具有两个影响其性能的参数：初始容量和负载因子。它们的定义与HashMap一样。但是请注意，与HashMap相比，
+ * 此类为初始容量选择过高的值的惩罚不那么严重，因为此类的迭代时间不受容量的影响。
  *
  * <p><strong>Note that this implementation is not synchronized.</strong>
  * If multiple threads access a linked hash map concurrently, and at least
@@ -108,6 +125,9 @@ import java.io.IOException;
  * method.  This is best done at creation time, to prevent accidental
  * unsynchronized access to the map:<pre>
  *   Map m = Collections.synchronizedMap(new LinkedHashMap(...));</pre>
+ *   请注意，此实现未同步。如果多个线程同时访问链接的哈希映射，并且至少有一个线程在结构上修改该映射，则必须在外部进行同步。
+ *   通常，通过在自然封装地图的某个对象上进行同步来完成此操作。如果不存在这样的对象，则应使用Collections.synchronizedMap方法“包装”地图。
+ *   最好在创建时完成此操作，以防止意外不同步地访问地图：
  *
  * A structural modification is any operation that adds or deletes one or more
  * mappings or, in the case of access-ordered linked hash maps, affects
@@ -116,6 +136,8 @@ import java.io.IOException;
  * a structural modification.  <strong>In access-ordered linked hash maps,
  * merely querying the map with <tt>get</tt> is a structural modification.
  * </strong>)
+ * 结构修改是添加或删除一个或多个映射的任何操作，或者在访问排序的链接的哈希映射的情况下，会影响迭代的顺序。在插入顺序链接的哈希表中，
+ * 仅更改与映射中已包含的键关联的值不是结构上的修改。在访问顺序链接的哈希表中，仅使用get查询该表是结构上的修改。）
  *
  * <p>The iterators returned by the <tt>iterator</tt> method of the collections
  * returned by all of this class's collection view methods are
@@ -125,6 +147,9 @@ import java.io.IOException;
  * ConcurrentModificationException}.  Thus, in the face of concurrent
  * modification, the iterator fails quickly and cleanly, rather than risking
  * arbitrary, non-deterministic behavior at an undetermined time in the future.
+ * 所有此类的所有collection视图方法返回的collection的iterator方法返回的迭代器都是快速失败的：
+ * 如果在创建迭代器之后的任何时间对结构进行结构修改，则可以通过迭代器自己的remove方法进行任何方式的修改，
+ * 迭代器将抛出ConcurrentModificationException。因此，面对并发修改，迭代器会快速干净地失败，而不会在未来的不确定时间内冒任意，不确定的行为的风险。
  *
  * <p>Note that the fail-fast behavior of an iterator cannot be guaranteed
  * as it is, generally speaking, impossible to make any hard guarantees in the
@@ -133,11 +158,15 @@ import java.io.IOException;
  * Therefore, it would be wrong to write a program that depended on this
  * exception for its correctness:   <i>the fail-fast behavior of iterators
  * should be used only to detect bugs.</i>
+ * 注意，迭代器的快速失败行为无法得到保证，因为通常来说，在存在不同步的并发修改的情况下，
+ * 不可能做出任何严格的保证。快速失败的迭代器会尽最大努力抛出ConcurrentModificationException。
+ * 因此，编写依赖于此异常的程序的正确性是错误的：迭代器的快速失败行为仅应用于检测错误。
  *
  * <p>The spliterators returned by the spliterator method of the collections
  * returned by all of this class's collection view methods are
  * <em><a href="Spliterator.html#binding">late-binding</a></em>,
  * <em>fail-fast</em>, and additionally report {@link Spliterator#ORDERED}.
+ * 由此类的所有集合视图方法返回的集合的spliterator方法返回的分隔器是后期绑定，快速失败的，并另外报告Spliterator.ORDERED。
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">

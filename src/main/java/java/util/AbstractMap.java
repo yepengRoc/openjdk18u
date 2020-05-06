@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 /**
  * This class provides a skeletal implementation of the <tt>Map</tt>
  * interface, to minimize the effort required to implement this interface.
+ * 此类提供Map接口的基本实现，以最大程度地减少实现此接口所需的工作。
  *
  * <p>To implement an unmodifiable map, the programmer needs only to extend this
  * class and provide an implementation for the <tt>entrySet</tt> method, which
@@ -36,20 +37,26 @@ import java.util.Map.Entry;
  * will, in turn, be implemented atop <tt>AbstractSet</tt>.  This set should
  * not support the <tt>add</tt> or <tt>remove</tt> methods, and its iterator
  * should not support the <tt>remove</tt> method.
+ * 要实现不可修改的map，程序员只需扩展此类并为entrySet方法提供实现，该方法将返回地图映射的set-view。通常，
+ * 返回的集又将在AbstractSet之上实现。该集合不应该支持add或remove方法，并且它的迭代器也不应支持remove方法。
  *
  * <p>To implement a modifiable map, the programmer must additionally override
  * this class's <tt>put</tt> method (which otherwise throws an
  * <tt>UnsupportedOperationException</tt>), and the iterator returned by
  * <tt>entrySet().iterator()</tt> must additionally implement its
  * <tt>remove</tt> method.
+ * 要实现可修改的映射，程序员必须另外重写此类的put方法（否则将引发UnsupportedOperationException），并且entrySet（）。
+ * iterator（）返回的迭代器必须另外实现其remove方法。
  *
  * <p>The programmer should generally provide a void (no argument) and map
  * constructor, as per the recommendation in the <tt>Map</tt> interface
  * specification.
+ * 程序员通常应按照Map接口规范中的建议提供一个void（无参数）的map构造函数。
  *
  * <p>The documentation for each non-abstract method in this class describes its
  * implementation in detail.  Each of these methods may be overridden if the
  * map being implemented admits a more efficient implementation.
+ * 此类中每个非抽象方法的文档都详细描述了其实现。如果要实现的map允许更有效的实现，则可以覆盖这些方法中的每一个。
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">

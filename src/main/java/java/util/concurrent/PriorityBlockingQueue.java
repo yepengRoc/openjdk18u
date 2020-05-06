@@ -60,6 +60,9 @@ import sun.misc.SharedSecrets;
  * Comparable natural ordering} also does not permit insertion of
  * non-comparable objects (doing so results in
  * {@code ClassCastException}).
+ * 一个无界阻塞队列，它使用与类PriorityQueue相同的排序规则，并提供阻塞检索操作。
+ * 尽管此队列在逻辑上是不受限制的，但是由于资源耗尽（导致OutOfMemoryError），
+ * 尝试添加可能会失败。此类不允许使用null元素。依赖自然顺序的优先级队列也不允许插入不可比较的对象（这样做会导致ClassCastException）。
  *
  * <p>This class and its iterator implement all of the
  * <em>optional</em> methods of the {@link Collection} and {@link
@@ -70,6 +73,10 @@ import sun.misc.SharedSecrets;
  * {@code Arrays.sort(pq.toArray())}.  Also, method {@code drainTo}
  * can be used to <em>remove</em> some or all elements in priority
  * order and place them in another collection.
+ * 此类及其迭代器实现Collection和Iterator接口的所有可选方法。不保证方法iterator（）
+ * 中提供的Iterator以任何特定顺序遍历PriorityBlockingQueue的元素。如果需要有序遍历，
+ * 请考虑使用Arrays.sort（pq.toArray（））。同样，方法是，
+ * 可以使用排水管理方法来按优先级顺序删除部分或全部元素，并将它们放在另一个集合中。
  *
  * <p>Operations on this class make no guarantees about the ordering
  * of elements with equal priority. If you need to enforce an
@@ -78,7 +85,8 @@ import sun.misc.SharedSecrets;
  * example, here is a class that applies first-in-first-out
  * tie-breaking to comparable elements. To use it, you would insert a
  * {@code new FIFOEntry(anEntry)} instead of a plain entry object.
- *
+ *此类的操作不能保证具有相同优先级的元素的顺序。如果需要执行排序，则可以定义使用辅助键来中断主优先级值中的联系的自定义类或比较器。
+ * 例如，这是一个将先进先出抢七应用于可比较元素的类。要使用它，您将插入一个新的FIFOEntry（anEntry）而不是一个普通的输入对象。
  *  <pre> {@code
  * class FIFOEntry<E extends Comparable<? super E>>
  *     implements Comparable<FIFOEntry<E>> {
@@ -125,6 +133,10 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * interoperability, a plain PriorityQueue is still used during
      * serialization, which maintains compatibility at the expense of
      * transiently doubling overhead.
+     * 该实现使用基于数组的二进制堆，公共操作受单个锁保护。但是，调整大小期间的分配使用简单的自旋锁（仅在不持有主锁的情况下使用），
+     * 以允许获取与分配同时进行。这避免了等待的消费者的重复推迟和后续元素的建立。分配过程中需要回退锁，
+     * 因此无法像在此类的早期版本中那样简单地将委派的java.util.PriorityQueue操作包装在锁中。为了保持互操作性，
+     * 在序列化过程中仍然使用普通的PriorityQueue，它维护兼容性，但代价是瞬时增加一倍的开销。
      */
 
     /**
@@ -287,12 +299,20 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * @param oldCap the length of the array
      */
     private void tryGrow(Object[] array, int oldCap) {
+        /**
+         * 首先释放一次锁。因为是添加元素导致的扩容。
+         * 添加元素的时候加锁了的，所以这里要进行锁的释放
+         */
         lock.unlock(); // must release and then re-acquire main lock
         Object[] newArray = null;
         if (allocationSpinLock == 0 &&
             UNSAFE.compareAndSwapInt(this, allocationSpinLockOffset,
                                      0, 1)) {
             try {
+                /**
+                 * 如果容量小于64 ，则直接增长一倍再加2
+                 * 如果大于64，则增加0.5倍
+                 */
                 int newCap = oldCap + ((oldCap < 64) ?
                                        (oldCap + 2) : // grow faster if small
                                        (oldCap >> 1));
@@ -308,9 +328,15 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
                 allocationSpinLock = 0;
             }
         }
+        /**
+         * 说明其它线程也操作了扩容，但是没有成功所以Object[] newArray = null;
+         * 这个时候，需要让出cpu资源，让扩容线程执行扩容动作。如果这里不为null,说明
+         * 扩容线程已经执行扩容成功了
+         *
+         */
         if (newArray == null) // back off if another thread is allocating
             Thread.yield();
-        lock.lock();
+        lock.lock();//因为是添加元素，所以扩容之后，需要从新获取锁
         if (newArray != null && queue == array) {
             queue = newArray;
             System.arraycopy(array, 0, newArray, 0, oldCap);
@@ -353,6 +379,7 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
      * @param k the position to fill
      * @param x the item to insert
      * @param array the heap array
+     *              是一个小顶堆
      */
     private static <T> void siftUpComparable(int k, T x, Object[] array) {
         Comparable<? super T> key = (Comparable<? super T>) x;
@@ -482,8 +509,9 @@ public class PriorityBlockingQueue<E> extends AbstractQueue<E>
         lock.lock();
         int n, cap;
         Object[] array;
+        //队列中元素大于 队列长度，进行扩容
         while ((n = size) >= (cap = (array = queue).length))
-            tryGrow(array, cap);
+            tryGrow(array, cap);//扩容
         try {
             Comparator<? super E> cmp = comparator;
             if (cmp == null)

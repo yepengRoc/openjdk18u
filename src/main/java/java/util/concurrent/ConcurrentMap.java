@@ -55,6 +55,11 @@ import java.util.function.Function;
  * <a href="{@docRoot}/../technotes/guides/collections/index.html">
  * Java Collections Framework</a>.
  *
+ * 提供线程安全性和原子性保证的Map。
+ * 内存一致性影响：与其他并发集合一样，在将对象作为键或值放入ConcurrentMap中之前，
+ * 线程中的操作发生在从另一个线程中的ConcurrentMap中访问或删除该对象之后的操作之前。
+ * 该接口是Java Collections Framework的成员。
+ *
  * @since 1.5
  * @author Doug Lea
  * @param <K> the type of keys maintained by this map

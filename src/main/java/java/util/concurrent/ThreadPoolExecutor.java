@@ -1,37 +1,3 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-/*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file:
- *
- * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
 
 package java.util.concurrent;
 
@@ -432,8 +398,8 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      */
     /**
      * ctl 高位记录的是 运行状态
-     * 二进制 29 位 30位 31位记录的是运行状态
-     * 前28位记录的是工作线程数
+     * 二进制 29 位 30位 31位记录的是运行状态    高三位
+     * 低28位记录的是工作线程数
      */
     private final AtomicInteger ctl = new AtomicInteger(ctlOf(RUNNING, 0));
     private static final int COUNT_BITS = Integer.SIZE - 3; //29
@@ -1038,7 +1004,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 if (compareAndIncrementWorkerCount(c))//任务数加1。成功则退出。任务数可能
                     break retry;
                 c = ctl.get();  // Re-read ctl cas失败
-                if (runStateOf(c) != rs)//再来一遍
+                if (runStateOf(c) != rs)//再来一遍。线程的状态改变，说明有其它线程先一步提交了任务。则重试
                     continue retry;//继续
                 //工作线程改变
                 // else CAS failed due to workerCount change; retry inner loop
@@ -1074,14 +1040,14 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 } finally {
                     mainLock.unlock();
                 }
-                if (workerAdded) {
+                if (workerAdded) {//添加线程成功则启动
                     t.start();
                     workerStarted = true;
                 }
             }
         } finally {
             if (! workerStarted)
-                addWorkerFailed(w);
+                addWorkerFailed(w);//没有启动成功，进行失败处理，从工作set中移除掉
         }
         return workerStarted;
     }
@@ -1506,9 +1472,12 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             int recheck = ctl.get();
             if (! isRunning(recheck) && remove(command))//再次检查，如果线程池非运行状态则移除任务，执行拒绝策略
                 reject(command);
-            else if (workerCountOf(recheck) == 0)//如果没有任务
-                addWorker(null, false);
+            else if (workerCountOf(recheck) == 0)//如果没有任务。没有线程了
+                addWorker(null, false);//创建一个空线程，去任务队列拿任务执行
         }
+        /**
+         * 线程池不是running状态。使用maximum 创建线程。失败的话，走拒绝策略
+         */
         else if (!addWorker(command, false))
             reject(command);
     }

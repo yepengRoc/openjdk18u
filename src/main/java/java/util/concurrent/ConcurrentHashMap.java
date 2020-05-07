@@ -703,7 +703,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Encodings for Node hash fields. See above for explanation.
      */
     static final int MOVED     = -1; // hash for forwarding nodes
-    static final int TREEBIN   = -2; // hash for roots of trees
+    static final int TREEBIN   = -2; // hash for roots of trees -2是true
     static final int RESERVED  = -3; // hash for transient reservations 暂时保留
     static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
 
@@ -803,6 +803,17 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * Returns a power of two table size for the given desired capacity.
      * See Hackers Delight, sec 3.2
+     *
+     * 求一个数的 2倍
+     * 通过不停的移位，把最高位 为1的字节之后的字节都变为1 ，然后+1
+     * 例如
+     * 0010010
+     * 0001001
+     * ---------
+     * 0011001
+     * 0000110
+     * --------
+     *
      */
     private static final int tableSizeFor(int c) {
         int n = c - 1;
@@ -888,11 +899,13 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /**
      * The array of bins. Lazily initialized upon first insertion.
      * Size is always a power of two. Accessed directly by iterators.
+     * hash桶数组
      */
     transient volatile Node<K,V>[] table;//是一个node数组
 
     /**
      * The next table to use; non-null only while resizing.
+     * 扩容的时候使用
      */
     private transient volatile Node<K,V>[] nextTable;
 
@@ -922,6 +935,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
+     * 自旋
      */
     private transient volatile int cellsBusy;
 
@@ -1129,24 +1143,29 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /** Implementation for put and putIfAbsent */
     final V putVal(K key, V value, boolean onlyIfAbsent) {
+        //不允许空值
         if (key == null || value == null) throw new NullPointerException();
         int hash = spread(key.hashCode());
         int binCount = 0;
         for (Node<K,V>[] tab = table;;) {
             Node<K,V> f; int n, i, fh;
             if (tab == null || (n = tab.length) == 0)
+            /**
+             * 初始化底层h数组
+             * 扩容之后，继续循环
+             */
                 tab = initTable();
-            else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {//如果当前位置没有元素
+            else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {//如果当前位置没有元素。则cas设置key  value.成功则退出
                 if (casTabAt(tab, i, null,
                              new Node<K,V>(hash, key, value, null)))
                     break;                   // no lock when adding to empty bin
             }
-            else if ((fh = f.hash) == MOVED)//如果当前位置的元素的hash = -1
+            else if ((fh = f.hash) == MOVED)//如果当前位置的元素的hash = -1。说明正在扩容
                 tab = helpTransfer(tab, f);
-            else {
+            else {//也没有cas成功，也没有在扩容。这个时候当前桶的位置已经有值了，用当前桶的元素作为锁
                 V oldVal = null;
                 synchronized (f) {//锁加载第一个元素上
-                    if (tabAt(tab, i) == f) {//再次检查第一个元素是否改变
+                    if (tabAt(tab, i) == f) {//再次检查第一个元素是否改变。因为有可能已经转换为红黑树了
                         if (fh >= 0) {//hash大于0 说明有元素，是链表。
                             binCount = 1;
                             for (Node<K,V> e = f;; ++binCount) {
@@ -2346,7 +2365,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     private final Node<K,V>[] initTable() {
         Node<K,V>[] tab; int sc;
         while ((tab = table) == null || tab.length == 0) {
-            if ((sc = sizeCtl) < 0)//如果sizeCtl为负数，说明已经有线程在扩容了。说明一次只能由一个线程进行扩容
+            if ((sc = sizeCtl) < 0)//如果sizeCtl为负数，说明已经有线程在扩容了。说明一次只能由一个线程进行扩容。当当前线程让出cpu
                 Thread.yield(); // lost initialization race; just spin
             else if (U.compareAndSwapInt(this, SIZECTL, sc, -1)) {//没有则设置
                 try {

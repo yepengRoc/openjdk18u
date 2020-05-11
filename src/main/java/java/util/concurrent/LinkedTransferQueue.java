@@ -479,9 +479,12 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * them after use.  Relies heavily on Unsafe mechanics to minimize
      * unnecessary ordering constraints: Writes that are intrinsically
      * ordered wrt other accesses or CASes use simple relaxed forms.
+     * 队列节点。对项目使用Object而不是E，以便在使用后忘记它们。
+     * 严重依赖于不安全机制来最大程度地减少不必要的排序约束：在其他访问或CAS的本质上排序的写入使用简单的宽松形式。
      */
     static final class Node {
         final boolean isData;   // false if this is a request node
+        //如果isData，则最初为非null；匹配
         volatile Object item;   // initially non-null if isData; CASed to match  cas设置匹配对象
         volatile Node next;
         volatile Thread waiter; // null until waiting
@@ -683,9 +686,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 if (s == null)
                     s = new Node(e, haveData);
                 Node pred = tryAppend(s, haveData);
-                if (pred == null)
+                if (pred == null)//失败重试
                     continue retry;           // lost race vs opposite mode
-                if (how != ASYNC)
+                if (how != ASYNC)//不是异步。 同步或超时
                     return awaitMatch(s, pred, e, (how == TIMED), nanos);
             }
             return e; // not waiting
@@ -705,12 +708,15 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         for (Node t = tail, p = t;;) {        // move p to last node and append
             Node n, u;                        // temps for reads of next & tail
             if (p == null && (p = head) == null) {
-                if (casHead(null, s))
+                if (casHead(null, s))//设置头节点为s
                     return s;                 // initialize
             }
-            else if (p.cannotPrecede(haveData))
+            else if (p.cannotPrecede(haveData))//
                 return null;                  // lost race vs opposite mode
             else if ((n = p.next) != null)    // not last; keep traversing
+            /**
+             * p 这个时候tail变了 。则从新指向
+             */
                 p = p != t && t != (u = tail) ? (t = u) : // stale tail
                     (p != n) ? n : null;      // restart if off list
             else if (!p.casNext(null, s))
@@ -749,11 +755,18 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             Object item = s.item;
             if (item != e) {                  // matched
                 // assert item != s;
-                s.forgetContents();           // avoid garbage
+                s.forgetContents();           // avoid garbage  item指向自己
                 return LinkedTransferQueue.<E>cast(item);
             }
+            /**
+             * 超时或取消也指向自己
+             * 尝试解除 s与前一个节点的关系
+             */
             if ((w.isInterrupted() || (timed && nanos <= 0)) &&
                     s.casItem(e, s)) {        // cancel
+                /**
+                 * 这个方法需要看下 TODO
+                 */
                 unsplice(pred, s);
                 return e;
             }

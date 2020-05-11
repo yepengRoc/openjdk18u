@@ -258,14 +258,18 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              */
             boolean tryMatch(SNode s) {
                 if (match == null &&
-                    UNSAFE.compareAndSwapObject(this, matchOffset, null, s)) {
+                    UNSAFE.compareAndSwapObject(this, matchOffset, null, s)) {//匹配Snode为null,设置匹配node
                     Thread w = waiter;
                     if (w != null) {    // waiters need at most one unpark
-                        waiter = null;
-                        LockSupport.unpark(w);
+                        waiter = null;//重置waiter
+                        LockSupport.unpark(w);//进行唤醒
                     }
                     return true;
                 }
+                /**
+                 * 两个线程 都判断完 match == null ，其中一个cas成功，
+                 * 另外一个cas失败，则这个时候 match是等于s的
+                 */
                 return match == s;
             }
 
@@ -345,6 +349,12 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              *    operations, and then continue. The code for helping
              *    is essentially the same as for fulfilling, except
              *    that it doesn't return the item.
+             * 基本算法是循环尝试以下三种操作之一：
+             * 1.如果明显为空或已经包含相同模式的节点，请尝试将节点压入堆栈并等待匹配，然后将其返回，如果取消则返回null。
+             * 2.如果显然包含互补模式的节点，请尝试将满足的节点推入堆栈，与相应的等待节点匹配，从堆栈中弹出两者，然后返回匹配的项目。
+             * 由于其他线程正在执行操作3，因此实际上可能不需要匹配或取消链接：
+             * 3.如果栈顶已经包含另一个实现节点，请通过执行其match和/或pop操作来帮助它，然后继续。帮助代码与实现代码基本相同，
+             * 不同之处在于它不返回项目。
              */
 
             SNode s = null; // constructed/reused as needed
@@ -360,36 +370,43 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                             return null;
                     } else if (casHead(h, s = snode(s, e, h, mode))) {
                         SNode m = awaitFulfill(s, timed, nanos);
-                        if (m == s) {               // wait was cancelled
-                            clean(s);
+                        if (m == s) { //说明前面压入的一个节点已经取消了              // wait was cancelled
+                            clean(s);//进行取消节点清理
                             return null;
                         }
-                        if ((h = head) != null && h.next == s)
-                            casHead(h, s.next);     // help s's fulfiller
-                        return (E) ((mode == REQUEST) ? m.item : s.item);
+                        //如果没有取消，则说明被匹配到了
+                        if ((h = head) != null && h.next == s)//则设置head为下一个节点
+                            casHead(h, s.next);     // help s's fulfiller  弹出两个节点
+                        /**
+                         * 如果当前是消费者，拿数据肯定放在 匹配线程所在的snode里，
+                         * 如果是生产者，则直接返回 s.item
+                         */
+                        return (E) ((mode == REQUEST) ? m.item : s.item);//如果是请求模式则返回m中的值，
                     }
-                } else if (!isFulfilling(h.mode)) { // try to fulfill
+                } else if (!isFulfilling(h.mode)) { // try to fulfill  是否是数据撮合状态
                     if (h.isCancelled())            // already cancelled
                         casHead(h, h.next);         // pop and retry
-                    else if (casHead(h, s=snode(s, e, h, FULFILLING|mode))) {
+                    else if (casHead(h, s=snode(s, e, h, FULFILLING|mode))) {//设置当前模式为数据撮合状态.设置当前节点为撮合状态，并为头节点
                         for (;;) { // loop until matched or waiters disappear
-                            SNode m = s.next;       // m is s's match
+                            SNode m = s.next;       // m is s's match  如果头结点后面没有值，则表示没有要匹配的，已经被其它线程匹配了。当前线程可能没有入站
                             if (m == null) {        // all waiters are gone
                                 casHead(s, null);   // pop fulfill node
                                 s = null;           // use new node next time
                                 break;              // restart main loop
                             }
                             SNode mn = m.next;
-                            if (m.tryMatch(s)) {
+                            //失败。说明其它线程抢先匹配了。
+                            if (m.tryMatch(s)) {//匹配成功之后，这个时候栈顶的两个线程就没有用了。需要出来。设置head为mn
                                 casHead(s, mn);     // pop both s and m
                                 return (E) ((mode == REQUEST) ? m.item : s.item);
                             } else                  // lost match
+                            //将 s的下一个节点设置成 mn.撮合失败，设置
                                 s.casNext(m, mn);   // help unlink
                         }
                     }
-                } else {                            // help a fulfiller
+                } else {//是数据撮合状态                            // help a fulfiller
                     SNode m = h.next;               // m is h's match
-                    if (m == null)                  // waiter is gone
+                    if (m == null)//头节点之后没有节点了，需要设置头结点为null               // waiter is gone
                         casHead(h, null);           // pop fulfilling node
                     else {
                         SNode mn = m.next;
@@ -432,16 +449,27 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              * SynchronousQueue.{poll/offer} don't check interrupts
              * and don't wait at all, so are trapped in transfer
              * method rather than calling awaitFulfill.
+             * 当节点/线程将要阻塞时，它会设置其等待线程，然后在实际阻塞（park）之前至少再检查一次状态，
+             * 从而涵盖了竞争与实现者的关系，并注意到等待线程为非空，因此应将其唤醒。
+             *
+             * 当由出现在调用点位于堆栈顶部的节点调用时，对park的调用之前会进行自旋，以避免在生产者和消费者及时到达时阻塞。
+             * 这可能足以只在多处理器上发生。从主循环返回的检查顺序反映了这样一个事实，即中断的优先级高于正常的返回，而正常的返回优先于超时。
+             * （因此，在超时时，在放弃之前要进行最后一次匹配检查。）除了来自非定时SynchronousQueue的调用。
+             * {poll / offer}不会检查中断，根本不等待，因此被困在传输方法中而不是调用awaitFulfill。
              */
             final long deadline = timed ? System.nanoTime() + nanos : 0L;
             Thread w = Thread.currentThread();
+            //自旋次数
             int spins = (shouldSpin(s) ?
                          (timed ? maxTimedSpins : maxUntimedSpins) : 0);
             for (;;) {
+                /**
+                 * 线程中断则取消
+                 */
                 if (w.isInterrupted())
                     s.tryCancel();
                 SNode m = s.match;
-                if (m != null)
+                if (m != null)//说明已经匹配到了
                     return m;
                 if (timed) {
                     nanos = deadline - System.nanoTime();
@@ -452,11 +480,11 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                 }
                 if (spins > 0)
                     spins = shouldSpin(s) ? (spins-1) : 0;
-                else if (s.waiter == null)
+                else if (s.waiter == null)//等待着为空，则赋值 当前线程
                     s.waiter = w; // establish waiter so can park next iter
-                else if (!timed)
+                else if (!timed)//没有过期时间，则直接阻塞当前线程。最终线程肯定会被唤醒进行 if (m != null) 的匹配
                     LockSupport.park(this);
-                else if (nanos > spinForTimeoutThreshold)
+                else if (nanos > spinForTimeoutThreshold)//有超时时间，则进行超时阻塞
                     LockSupport.parkNanos(this, nanos);
             }
         }
@@ -486,6 +514,10 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              * which case we try the node one past. We don't check any
              * further because we don't want to doubly traverse just to
              * find sentinel.
+             * 最糟糕的是，我们可能需要遍历整个堆栈以取消s的链接。如果有多个并发调用要清理，
+             * 则如果另一个线程已将其删除，则可能看不到。但是当看到任何已知跟随s的节点时，
+             * 我们可以停止。除非也将其取消，否则我们将使用s.next，在这种情况下，我们将尝试过去一个节点。
+             * 我们不做进一步检查，因为我们不想为了找到哨兵而进行双重遍历。
              */
 
             SNode past = s.next;
@@ -618,7 +650,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
         void advanceHead(QNode h, QNode nh) {
             if (h == head &&
                 UNSAFE.compareAndSwapObject(this, headOffset, h, nh))
-                h.next = h; // forget old next
+                h.next = h; // forget old next 指向自己。gc
         }
 
         /**
@@ -665,10 +697,18 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              * transferer. The check is here anyway because it places
              * null checks at top of loop, which is usually faster
              * than having them implicitly interspersed.
+             * 基本算法是循环尝试执行以下两个操作之一：
+             * 1.如果队列明显为空或持有相同模式的节点，
+             * 请尝试将节点添加到服务员队列中，等待被实现（或取消）并返回匹配项。
+             * 2.如果队列明显包含等待项，
+             * 并且此调用是互补模式，请尝试通过等待节点的CAS'item字段来实现并将其出队，然后返回匹配项。在每种情况下，
+             * 都应检查并尝试帮助其他停滞/缓慢的线程推进头和尾。循环以空检查开始，以防止看到未初始化的头或尾值。
+             * 这在当前的SynchronousQueue中永远不会发生，但是如果调用者将非易失性/最终引用保持到传输者，则可能发生这种情况。
+             * 无论如何，这里的检查是因为将空检查放在循环的顶部，通常比隐式散布检查要快。
              */
 
             QNode s = null; // constructed/reused as needed
-            boolean isData = (e != null);
+            boolean isData = (e != null);// isData为null的话，则是取数据。不为null则是放数据
 
             for (;;) {
                 QNode t = tail;
@@ -687,10 +727,10 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                     if (timed && nanos <= 0)        // can't wait
                         return null;
                     if (s == null)
-                        s = new QNode(e, isData);
-                    if (!t.casNext(null, s))        // failed to link in
+                        s = new QNode(e, isData);//生成一个新节点
+                    if (!t.casNext(null, s))        // failed to link in  新节点放入尾部
                         continue;
-
+                    //等待模式不一样的线程
                     advanceTail(t, s);              // swing tail and wait
                     Object x = awaitFulfill(s, e, timed, nanos);
                     if (x == s) {                   // wait was cancelled
@@ -706,19 +746,20 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                     }
                     return (x != null) ? (E)x : e;
 
-                } else {                            // complementary-mode
+                } else {   //模式不一样                         // complementary-mode
                     QNode m = h.next;               // node to fulfill
                     if (t != tail || m == null || h != head)
                         continue;                   // inconsistent read
 
                     Object x = m.item;
+                    //模式一样的了。x!=null说明是生产者，生产数据的
                     if (isData == (x != null) ||    // m already fulfilled
                         x == m ||                   // m cancelled
                         !m.casItem(x, e)) {         // lost CAS
                         advanceHead(h, m);          // dequeue and retry
                         continue;
                     }
-
+                    //模式不一样，没有入队，直接返回 队列头匹配的数据
                     advanceHead(h, m);              // successfully fulfilled
                     LockSupport.unpark(m.waiter);
                     return (x != null) ? (E)x : e;

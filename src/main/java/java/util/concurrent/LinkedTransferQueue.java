@@ -482,7 +482,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      */
     static final class Node {
         final boolean isData;   // false if this is a request node
-        volatile Object item;   // initially non-null if isData; CASed to match
+        volatile Object item;   // initially non-null if isData; CASed to match  cas设置匹配对象
         volatile Node next;
         volatile Thread waiter; // null until waiting
 
@@ -647,10 +647,20 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             for (Node h = head, p = h; p != null;) { // find & match first node
                 boolean isData = p.isData;
                 Object item = p.item;
+
+                /**
+                 * item != null
+                 *  true: 生产者。isData传入的如果是 true,则是生产者
+                 *  false:消费者。isData传入的false 则是消费者 两者模式相同
+                 *
+                 *  如果  (item != null) == isData 为false的话，说明已经匹配上了
+                 *  对于生产者来说，item记录的是 消费者，isData 为true.如果消费者没有说明，还没匹配上，可以进入这段逻辑
+                 *  对于消费者来说，item记录的是生产者，isData为 false.如果生产真没有说明，
+                 */
                 if (item != p && (item != null) == isData) { // unmatched
-                    if (isData == haveData)   // can't match
+                    if (isData == haveData)   // can't match  模式相同，不能匹配。
                         break;
-                    if (p.casItem(item, e)) { // match
+                    if (p.casItem(item, e)) { // match  模式不同，尝试匹配
                         for (Node q = p; q != h;) {
                             Node n = q.next;  // update by 2 unless singleton
                             if (head == h && casHead(h, n == null ? q : n)) {

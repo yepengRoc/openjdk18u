@@ -40,7 +40,9 @@ public class ArrayListSty {
         WeakHashMap weakHashMap = new WeakHashMap();
 
         TreeMap treeMap = new TreeMap();
-
+        /**
+         * 需要看看
+         */
         ConcurrentHashMap concurrentHashMap = new ConcurrentHashMap();
         concurrentHashMap.put("", "");
 
@@ -56,6 +58,9 @@ public class ArrayListSty {
         priorityBlockingQueue.add(1);
         priorityBlockingQueue.offer(1);
 
+        /**
+         * 需要看看
+         */
         LinkedTransferQueue linkedTransferQueue = new LinkedTransferQueue();
         linkedTransferQueue.offer(1);
 

@@ -202,6 +202,8 @@ public class ThreadLocalRandom extends Random {
      * thread local seed value needs to be generated. Note that even
      * though the initialization is purely thread-local, we need to
      * rely on (static) atomic generators to initialize the values.
+     * 初始化当前线程的线程字段。仅当Thread.threadLocalRandomProbe为零时才调用，
+     * 这表明需要生成线程本地种子值。请注意，即使初始化纯粹是线程局部的，我们也需要依靠（静态）原子生成器来初始化值。
      */
     static final void localInit() {
         int p = probeGenerator.addAndGet(PROBE_INCREMENT);
@@ -969,12 +971,18 @@ public class ThreadLocalRandom extends Random {
      *
      * Note: Because of package-protection issues, versions of some
      * these methods also appear in some subpackage classes.
+     * 可以在使用它们的类中找到以下方法的用法说明。简而言之，线程的“ probe”值是一个非零哈希码，
+     * 相对于两个冲突空间的任何幂，该哈希码不会（可能）与其他现有线程发生冲突。发生碰撞时，
+     * 将对其进行伪随机调整（使用Marsaglia XorShift）。nextSecondarySeed方法在与ThreadLocalRandom相同的上下文中使用，
+     * 但仅用于瞬态用法，例如随机自适应自旋/块序列，廉价的RNG足以满足此需求，并且如果我们可以从原则上讲，
+     * 它可以破坏主ThreadLocalRandom的用户可见统计属性使用它。注意：由于程序包保护问题，某些子程序包类中也会出现其中一些方法的版本。
      */
 
     /**
      * Returns the probe value for the current thread without forcing
      * initialization. Note that invoking ThreadLocalRandom.current()
      * can be used to force initialization on zero return.
+     * 返回当前线程的探测值，而无需强制初始化。请注意，调用ThreadLocalRandom.current（）可用于在零返回时强制初始化。
      */
     static final int getProbe() {
         return UNSAFE.getInt(Thread.currentThread(), PROBE);
@@ -983,6 +991,7 @@ public class ThreadLocalRandom extends Random {
     /**
      * Pseudo-randomly advances and records the given probe value for the
      * given thread.
+     * 伪随机前进并记录给定的探测值
      */
     static final int advanceProbe(int probe) {
         probe ^= probe << 13;   // xorshift

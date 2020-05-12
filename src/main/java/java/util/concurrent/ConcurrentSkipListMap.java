@@ -454,6 +454,9 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
         entrySet = null;
         values = null;
         descendingMap = null;
+        /**
+         * 初始化，默认层数是1
+         */
         head = new HeadIndex<K,V>(new Node<K,V>(null, BASE_HEADER, null),
                                   null, null, 1);
     }
@@ -733,21 +736,22 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                 if (r != null) {
                     Node<K,V> n = r.node;
                     K k = n.key;
-                    if (n.value == null) {
+                    if (n.value == null) {//value为null 。则指向r的右节点。把r节点从链表中剔除掉
                         if (!q.unlink(r))
                             break;           // restart
                         r = q.right;         // reread r
                         continue;
                     }
-                    if (cpr(cmp, key, k) > 0) {
+                    if (cpr(cmp, key, k) > 0) {//key 大于k.则后移一位，接着往后比较
                         q = r;
                         r = r.right;
                         continue;
                     }
                 }
+                //如果为null
                 if ((d = q.down) == null)
                     return q.node;
-                q = d;
+                q = d;// d down。则比较下一层
                 r = d.right;
             }
         }
@@ -880,11 +884,18 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
             throw new NullPointerException();
         Comparator<? super K> cmp = comparator;
         outer: for (;;) {
+            /**
+             * findPredecessor 找到当前要插入key的前一个 节点
+             */
             for (Node<K,V> b = findPredecessor(key, cmp), n = b.next;;) {
                 if (n != null) {
+                    /**
+                     * v value 存储节点的值
+                     * c compare 存储两个节点比较的大小
+                     */
                     Object v; int c;
                     Node<K,V> f = n.next;
-                    if (n != b.next)               // inconsistent read
+                    if (n != b.next)               // inconsistent read  读不一致
                         break;
                     if ((v = n.value) == null) {   // n is deleted
                         n.helpDelete(b, f);
@@ -898,25 +909,38 @@ public class ConcurrentSkipListMap<K,V> extends AbstractMap<K,V>
                         continue;
                     }
                     if (c == 0) {
+                        //说明存在相同的节点
                         if (onlyIfAbsent || n.casValue(v, value)) {
                             @SuppressWarnings("unchecked") V vv = (V)v;
                             return vv;
                         }
+                        //cas失败
                         break; // restart if lost race to replace value
                     }
                     // else c < 0; fall through
                 }
 
                 z = new Node<K,V>(key, value, n);
-                if (!b.casNext(n, z))
+                if (!b.casNext(n, z))//找到位置插入
                     break;         // restart if lost race to append to b
                 break outer;
             }
         }
-
+        //取一个随机数
         int rnd = ThreadLocalRandom.nextSecondarySeed();
+        /**
+         * 0x80000001 二进制 10000000000000000000000000000001
+         * rnd & 0x80000001 == 0 说明
+         * 1：rnd 不可能是奇数，因为奇数的第一位是1；
+         * 2：rnd不可能是负数，因为负数的最高位符号位是1，如果是负数 &完之后 还是一个负数。不可能等于0
+         * 通过以上分析说明 rnd为 正偶数的时候，才会进入此逻辑
+         *
+         */
         if ((rnd & 0x80000001) == 0) { // test highest and lowest bits
             int level = 1, max;
+            /**
+             * 从第二位开始，有几个连续的1，level 加几
+             */
             while (((rnd >>>= 1) & 1) != 0)
                 ++level;
             Index<K,V> idx = null;

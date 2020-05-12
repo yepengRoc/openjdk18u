@@ -1003,6 +1003,7 @@ public class ThreadLocalRandom extends Random {
 
     /**
      * Returns the pseudo-randomly initialized or updated secondary seed.
+     * 返回伪随机初始化或更新的辅助种子。
      */
     static final int nextSecondarySeed() {
         int r;

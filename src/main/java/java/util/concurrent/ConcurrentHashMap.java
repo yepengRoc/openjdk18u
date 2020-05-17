@@ -710,8 +710,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     /*
      * Encodings for Node hash fields. See above for explanation.
      */
-    static final int MOVED     = -1; // hash for forwarding nodes
-    static final int TREEBIN   = -2; // hash for roots of trees -2是true
+    static final int MOVED     = -1; // hash for forwarding nodes  用于转发节点的hash
+    static final int TREEBIN   = -2; // hash for roots of trees -2是true 为树的根
     static final int RESERVED  = -3; // hash for transient reservations 暂时保留
     static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
 
@@ -921,6 +921,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Base counter value, used mainly when there is no contention,
      * but also as a fallback during table initialization
      * races. Updated via CAS.
+     * 基本计数器值，主要在没有争用时使用*，也用作表初始化期间的回退争用。通过CAS更新。
      */
     private transient volatile long baseCount;
 
@@ -938,17 +939,20 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
     /**
      * The next table index (plus one) to split while resizing.
+     * 调整大小时要拆分的下一个表索引（加1）
      */
     private transient volatile int transferIndex;
 
     /**
      * Spinlock (locked via CAS) used when resizing and/or creating CounterCells.
+     * 调整大小和/或创建CounterCell时使用的Spinlock（通过CAS锁定）
      * 自旋
      */
     private transient volatile int cellsBusy;
 
     /**
      * Table of counter cells. When non-null, size is a power of 2.
+     * 计数器细胞表。如果为非null，则大小为2的幂。
      */
     private transient volatile CounterCell[] counterCells;
 

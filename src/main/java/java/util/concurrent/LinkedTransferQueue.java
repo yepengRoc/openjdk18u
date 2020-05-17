@@ -494,6 +494,12 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             return UNSAFE.compareAndSwapObject(this, nextOffset, cmp, val);
         }
 
+        /**
+         * 比较并交换
+         * @param cmp
+         * @param val
+         * @return
+         */
         final boolean casItem(Object cmp, Object val) {
             // assert cmp == null || cmp.getClass() != Node.class;
             return UNSAFE.compareAndSwapObject(this, itemOffset, cmp, val);
@@ -511,6 +517,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         /**
          * Links node to itself to avoid garbage retention.  Called
          * only after CASing head field, so uses relaxed write.
+         * 将节点 下一个指向自己。自己指向自己
          */
         final void forgetNext() {
             UNSAFE.putObject(this, nextOffset, this);
@@ -524,6 +531,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
          * mechanics that extract items.  Similarly, clearing waiter
          * follows either CAS or return from park (if ever parked;
          * else we don't care).
+         * 将item设置为self，将waiter设置为null，以避免在匹配或取消之后造成垃圾保留。
+         * 使用轻松的写操作*，因为在唯一的调用上下文中顺序已经受到限制：
+         * 只有在提取项目的易失性/原子性机制之后，才忘记该项目。同样，清理服务员*遵循CAS或从停放处返回（如果停放过； *否则我们不在乎）。
          */
         final void forgetContents() {
             UNSAFE.putObject(this, itemOffset, this);
@@ -657,8 +667,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                  *  false:消费者。isData传入的false 则是消费者 两者模式相同
                  *
                  *  如果  (item != null) == isData 为false的话，说明已经匹配上了
+                 *      item != null 如果为true 说明已经有匹配对象了。如果为false。说明没有匹配对象。
+                 *      isData ： false说明是消费者  true说明是生产者
                  *  对于生产者来说，item记录的是 消费者，isData 为true.如果消费者没有说明，还没匹配上，可以进入这段逻辑
                  *  对于消费者来说，item记录的是生产者，isData为 false.如果生产真没有说明，
+                 *
+                 *  item == p说明 说明出队或者取消了
+                 *
                  */
                 if (item != p && (item != null) == isData) { // unmatched
                     if (isData == haveData)   // can't match  模式相同，不能匹配。
@@ -675,6 +690,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                                 break;        // unless slack < 2
                         }
                         LockSupport.unpark(p.waiter);
+                        /**
+                         * 如果是放元素 放回null
+                         * 如果是取元素 取 元素
+                         */
                         return LinkedTransferQueue.<E>cast(item);
                     }
                 }

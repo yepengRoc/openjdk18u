@@ -257,6 +257,11 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
              * @return true if successfully matched to s
              */
             boolean tryMatch(SNode s) {
+                /**
+                 * 数据匹配，
+                 * 如果 匹配节点weinull 则cas设置s为匹配节点 w等待者不为null，进行唤醒操作。
+                 *
+                 */
                 if (match == null &&
                     UNSAFE.compareAndSwapObject(this, matchOffset, null, s)) {//匹配Snode为null,设置匹配node
                     Thread w = waiter;
@@ -275,6 +280,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
             /**
              * Tries to cancel a wait by matching node to itself.
+             * 取消的时候 把匹配节点设置为自己
              */
             void tryCancel() {
                 UNSAFE.compareAndSwapObject(this, matchOffset, null, this);
@@ -369,12 +375,23 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                         else
                             return null;
                     } else if (casHead(h, s = snode(s, e, h, mode))) {
+                        /**
+                         * 阻塞。如果从阻塞中返回。
+                         * 匹配节点和当前相等，说明被取消了
+                         */
                         SNode m = awaitFulfill(s, timed, nanos);
                         if (m == s) { //说明前面压入的一个节点已经取消了              // wait was cancelled
-                            clean(s);//进行取消节点清理
+                            clean(s);//进行取消节点清理。设置为下一个
                             return null;
                         }
-                        //如果没有取消，则说明被匹配到了
+                        /**
+                         * head不为null head的next
+                         * 这个时候说明 s被别的线程匹配了。则将 head 和s都出栈
+                         *  存在这样情况
+                         *      线程b 和站点的节点a 是不同模式，然后设置数据匹配模式，入队，进行匹配，
+                         *      又来一个线程c 和线程b模式不一样也入队把线程b给匹配了。
+                         *      这个时候 head c 和 b都要出队。这里描述的就是这种情况
+                         */
                         if ((h = head) != null && h.next == s)//则设置head为下一个节点
                             casHead(h, s.next);     // help s's fulfiller  弹出两个节点
                         /**
@@ -386,8 +403,16 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                 } else if (!isFulfilling(h.mode)) { // try to fulfill  是否是数据撮合状态
                     if (h.isCancelled())            // already cancelled
                         casHead(h, h.next);         // pop and retry
-                    else if (casHead(h, s=snode(s, e, h, FULFILLING|mode))) {//设置当前模式为数据撮合状态.设置当前节点为撮合状态，并为头节点
+                    /**
+                     * 设置当前模式为数据撮合状态.设置当前节点为撮合状态，并设置为头节点
+                     * 两种入队：如果队列中的节点 模式一致则可以入队
+                     * 如果队列的中节点可以匹配，且设置为节点匹配模式，则可以入队
+                     */
+                    else if (casHead(h, s=snode(s, e, h, FULFILLING|mode))) {
                         for (;;) { // loop until matched or waiters disappear
+                            /**
+                             * 被别的线程匹配到了。后面也没有可匹配的线程了
+                             */
                             SNode m = s.next;       // m is s's match  如果头结点后面没有值，则表示没有要匹配的，已经被其它线程匹配了。当前线程可能没有入站
                             if (m == null) {        // all waiters are gone
                                 casHead(s, null);   // pop fulfill node
@@ -395,21 +420,42 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
                                 break;              // restart main loop
                             }
                             SNode mn = m.next;
-                            //失败。说明其它线程抢先匹配了。
+                            /**
+                             * 失败。说明其它线程抢先匹配了。
+                             */
                             if (m.tryMatch(s)) {//匹配成功之后，这个时候栈顶的两个线程就没有用了。需要出来。设置head为mn
                                 casHead(s, mn);     // pop both s and m
                                 return (E) ((mode == REQUEST) ? m.item : s.item);
                             } else                  // lost match
-                            //将 s的下一个节点设置成 mn.撮合失败，设置
+                            /**
+                             * 失败。说明 当前节点的下一个节点被其它线程匹配了。很有可能。-因为并发到这里
+                             * 成功的一个线程需要设置 节点是撮合状态。没有成功的走到后面直接匹配下一个。
+                             *  这里如果当前设置撮合节点的线程还没有入队，但是后面设置撮合状态失败的线程优先匹配了h.next.这个没有问题
+                             *  头结点留给当前线程进行撮合
+                             *  如果当前当前线程已经入队，还没有进行match,有可能抢先一步被后面的线程匹配了 h.next.导致当前线程没有匹配的了
+                             *  接着往后循环
+                             * 有可能下一个节点取消了，或者超时了。则接着匹配下一个线程
+                             */
+                                //将 s的下一个节点设置成 mn.撮合失败，设置
                                 s.casNext(m, mn);   // help unlink
                         }
                     }
-                } else {//是数据撮合状态                            // help a fulfiller
+                } else {//是数据撮合状态// help a fulfiller
+                    /**
+                     * 如果线程在设置数据撮合状态失败了，直接进行数据匹配，不会入队
+                     * 。则找队列中的下一个元素跟当前线程进行撮合
+                     * 因为队列中元素的模式都是一样的
+                     *
+                     * 如果能匹配，则就把h头结点出队。
+                     */
                     SNode m = h.next;               // m is h's match
                     if (m == null)//头节点之后没有节点了，需要设置头结点为null               // waiter is gone
                         casHead(h, null);           // pop fulfilling node
                     else {
                         SNode mn = m.next;
+                        /**
+                         * 匹配到了。则
+                         */
                         if (m.tryMatch(h))          // help match
                             casHead(h, mn);         // pop both h and m
                         else                        // lost match

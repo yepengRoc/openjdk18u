@@ -2,6 +2,8 @@ jdk rt.jar中的源码进行学习，查看，添加中文注释
 
 jdk8api地址：https://docs.oracle.com/javase/8/docs/api/
 
+1.8.0.242
+
 这里下载的是openjdk
 
 opjdk下载地址

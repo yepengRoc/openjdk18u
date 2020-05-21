@@ -98,6 +98,8 @@ public class ArrayListSty {
 
         Exchanger exchanger = new Exchanger();
 
+//        exchanger.exchange(null);
+
 
 
     }

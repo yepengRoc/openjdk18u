@@ -338,6 +338,7 @@ public class Exchanger<V> {
 
     /**
      * Slot used until contention detected.
+     * 在检测到争用之前一直使用插槽
      */
     private volatile Node slot;
 
@@ -452,6 +453,9 @@ public class Exchanger<V> {
      * TIMED_OUT if timed and timed out
      */
     private final Object slotExchange(Object item, boolean timed, long ns) {
+        /**
+         * 要么有值，要么返回一个空节点
+         */
         Node p = participant.get();
         Thread t = Thread.currentThread();
         if (t.isInterrupted()) // preserve interrupt status so caller can recheck
@@ -459,6 +463,10 @@ public class Exchanger<V> {
 
         for (Node q;;) {
             if ((q = slot) != null) {
+                /**
+                 * slot不为null .则把slot 设置为null
+                 * 标识一次交换完成
+                 */
                 if (U.compareAndSwapObject(this, SLOT, q, null)) {
                     Object v = q.item;
                     q.match = item;
@@ -467,6 +475,11 @@ public class Exchanger<V> {
                         U.unpark(w);
                     return v;
                 }
+                /**
+                 * 设置失败。说明多个喜爱昵称竞争了
+                 * 成功的已经返回。没有成功地 需要继续等待置换
+                 * 创建数组
+                 */
                 // create arena on contention, but continue until slot null
                 if (NCPU > 1 && bound == 0 &&
                     U.compareAndSwapInt(this, BOUND, 0, SEQ))
@@ -475,14 +488,22 @@ public class Exchanger<V> {
             else if (arena != null)
                 return null; // caller must reroute to arenaExchange
             else {
+                /**
+                 * slot为null
+                 * arean为null
+                 *
+                 */
                 p.item = item;
+                //成功。则跳出循环等待被匹配
                 if (U.compareAndSwapObject(this, SLOT, null, p))
                     break;
+                //cas失败重置数据
                 p.item = null;
             }
         }
 
         // await release
+        //是吧
         int h = p.hash;
         long end = timed ? System.nanoTime() + ns : 0L;
         int spins = (NCPU > 1) ? SPINS : 1;
@@ -503,6 +524,7 @@ public class Exchanger<V> {
                 p.parked = t;
                 if (slot == p)
                     U.park(false, ns);
+                //说明slot变了
                 p.parked = null;
                 U.putObject(t, BLOCKER, null);
             }
@@ -529,25 +551,30 @@ public class Exchanger<V> {
      * the current thread is {@linkplain Thread#interrupt interrupted}),
      * and then transfers the given object to it, receiving its object
      * in return.
+     * 等待另一个线程到达此交换点（除非当前线程是{@linkplain Thread＃interrupt interrupted}），然后将给定对象传送给它，并接收其对象*作为回报。
      *
      * <p>If another thread is already waiting at the exchange point then
      * it is resumed for thread scheduling purposes and receives the object
      * passed in by the current thread.  The current thread returns immediately,
      * receiving the object passed to the exchange by that other thread.
+     * 如果另一个线程已经在交换点处等待，则出于线程调度的目的将其恢复并接收当前线程传递的对象。当前线程立即返回，*接收该其他线程传递给交换的对象。
      *
      * <p>If no other thread is already waiting at the exchange then the
      * current thread is disabled for thread scheduling purposes and lies
      * dormant until one of two things happens:
+     * 如果没有其他线程在等待交换，则出于线程调度的目的，将禁用当前线程，并使其处于休眠状态，直到发生以下两种情况之一：
      * <ul>
      * <li>Some other thread enters the exchange; or
      * <li>Some other thread {@linkplain Thread#interrupt interrupts}
      * the current thread.
+     * 其他线程进入交换机；或* <li>某些其他线程{@linkplain Thread＃interrupt interrupts} *当前线程。
      * </ul>
      * <p>If the current thread:
      * <ul>
      * <li>has its interrupted status set on entry to this method; or
      * <li>is {@linkplain Thread#interrupt interrupted} while waiting
      * for the exchange,
+     * 在进入此方法时已设置其中断状态；或*等待交换时，{<li>是{@linkplain线程#interrupt被中断}
      * </ul>
      * then {@link InterruptedException} is thrown and the current thread's
      * interrupted status is cleared.

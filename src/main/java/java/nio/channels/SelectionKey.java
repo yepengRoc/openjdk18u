@@ -32,6 +32,7 @@ import java.io.IOException;
 /**
  * A token representing the registration of a {@link SelectableChannel} with a
  * {@link Selector}.
+ * 表示{@link SelectableChannel}向{@link Selector}注册的令牌。
  *
  * <p> A selection key is created each time a channel is registered with a
  * selector.  A key remains valid until it is <i>cancelled</i> by invoking its
@@ -41,13 +42,16 @@ import java.io.IOException;
  * href="Selector.html#ks"><i>cancelled-key set</i></a> for removal during the
  * next selection operation.  The validity of a key may be tested by invoking
  * its {@link #isValid isValid} method.
- *
+ *每次使用*选择器注册频道时，都会创建一个选择键。密钥保持有效，直到通过调用其{@link #cancel cancel}方法，
+ * 关闭其通道或关闭其*选择器而被<i>取消</ i>为止。
+ * 取消键不会立即将其从选择器中删除；而是将其添加到选择器的<a * href="Selector.html#ks"> <i>取消键集</ i> </a>中，
+ * 以便在下次选择操作期间将其删除。可以通过调用密钥的{@link #isValid isValid}方法来测试密钥的有效性。
  * <a name="opsets"></a>
  *
  * <p> A selection key contains two <i>operation sets</i> represented as
  * integer values.  Each bit of an operation set denotes a category of
  * selectable operations that are supported by the key's channel.
- *
+ * 选择键包含两个表示为整数值的<i>操作集</ i>。操作集的每一位表示键的通道支持的可选操作的类别。
  * <ul>
  *
  *   <li><p> The <i>interest set</i> determines which operation categories will
@@ -55,13 +59,15 @@ import java.io.IOException;
  *   methods is invoked.  The interest set is initialized with the value given
  *   when the key is created; it may later be changed via the {@link
  *   #interestOps(int)} method. </p></li>
- *
+ *<i>兴趣集</ i>确定下次调用选择器的selection方法之一时，将测试哪些操作类别是否准备就绪。创建密钥时，
+ * 用给定的值初始化利息集；以后可以通过{@link  #interestOps（int）}方法进行更改
  *   <li><p> The <i>ready set</i> identifies the operation categories for which
  *   the key's channel has been detected to be ready by the key's selector.
  *   The ready set is initialized to zero when the key is created; it may later
  *   be updated by the selector during a selection operation, but it cannot be
  *   updated directly. </p></li>
- *
+ *  i>就绪集</ i>标识键的选择器已检测到*通道已准备就绪的操作类别。 *创建密钥时，准备集初始化为零；
+ *  稍后可能会在选择操作期间由选择器进行更新，但是不能直接对其进行更新
  * </ul>
  *
  * <p> That a selection key's ready set indicates that its channel is ready for
@@ -71,6 +77,9 @@ import java.io.IOException;
  * completion of a selection operation.  It is likely to be made inaccurate by
  * external events and by I/O operations that are invoked upon the
  * corresponding channel.
+ * 选择键的就绪集表明它的通道已准备好用于一些操作类别，但这只是一个提示，
+ * 但不能保证这样一个类别中的操作可以由线程执行而不会导致线程阻塞。准备操作很可能在选择操作完成后立即准确。
+ * 外部事件和在*对应通道上调用的I / O操作可能会使它不准确。
  *
  * <p> This class defines all known operation-set bits, but precisely which
  * bits are supported by a given channel depends upon the type of the channel.
@@ -79,7 +88,9 @@ import java.io.IOException;
  * identifying just those operations that are supported by the channel.  An
  * attempt to set or test an operation-set bit that is not supported by a key's
  * channel will result in an appropriate run-time exception.
- *
+ * 此类定义了所有已知的操作集位，但是精确地给定通道支持哪些位取决于通道的类型。 *
+ * {@link SelectableChannel}的每个子类定义一个{@link  SelectableChannel＃validOps（）validOps（）}方法，
+ * 该方法返回一个集合，该集合仅标识通道支持的那些操作。尝试设置或测试键的通道不支持的操作集位将导致适当的运行时异常。
  * <p> It is often necessary to associate some application-specific data with a
  * selection key, for example an object that represents the state of a
  * higher-level protocol and handles readiness notifications in order to
@@ -87,7 +98,9 @@ import java.io.IOException;
  * <i>attachment</i> of a single arbitrary object to a key.  An object can be
  * attached via the {@link #attach attach} method and then later retrieved via
  * the {@link #attachment() attachment} method.
- *
+ *通常需要将某些特定于应用程序的数据与*选择键相关联，例如，代表*高层协议状态并处理就绪通知的对象，以实现该协议。
+ * 因此，选择键支持将单个任意对象的* <i> attachment </ i>附加到键上。可以通过{@link #attach attach}方法附加对象，
+ * 然后再通过{@link #attachment（）Attachment}方法检索对象。
  * <p> Selection keys are safe for use by multiple concurrent threads.  The
  * operations of reading and writing the interest set will, in general, be
  * synchronized with certain operations of the selector.  Exactly how this
@@ -98,7 +111,10 @@ import java.io.IOException;
  * all.  In any case, a selection operation will always use the interest-set
  * value that was current at the moment that the operation began.  </p>
  *
- *
+ *选择键可安全用于多个并发线程。 *读取和写入兴趣集的操作通常将与选择器的某些操作同步。
+ * 同步的确切执行方式取决于实现方式：在朴素的实现方式中，如果选择操作已经在进行中，
+ * 则兴趣集的读写可能会无限期地阻塞；在高性能的实现中，如果有兴趣，读或写兴趣集可能会短暂阻塞。在任何情况下，
+ * 选择操作将始终使用该操作开始时当前的兴趣设置值。
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4

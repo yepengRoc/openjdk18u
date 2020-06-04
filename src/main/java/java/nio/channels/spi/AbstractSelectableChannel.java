@@ -46,7 +46,9 @@ import java.nio.channels.Selector;
  * java.nio.channels.SelectableChannel} specification.  Implementations of the
  * abstract protected methods defined in this class need not synchronize
  * against other threads that might be engaged in the same operations.  </p>
- *
+ *此类定义了处理通道注册，注销和关闭机制的方法。它保持该通道的当前阻止模式及其当前的选择键集。
+ *  *它执行实现{@link * java.nio.channels.SelectableChannel}规范所需的所有同步。
+ *  此类中定义的抽象保护方法的实现无需与可能参与相同操作的其他线程进行同步。
  *
  * @author Mark Reinhold
  * @author Mike McCloskey

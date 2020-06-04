@@ -9,7 +9,7 @@ import java.io.IOException;
 
 /**
  * An asynchronous channel for stream-oriented listening sockets.
- *
+ *面向流的侦听套接字的异步通道
  * <p> An asynchronous server-socket channel is created by invoking the
  * {@link #open open} method of this class.
  * A newly-created asynchronous server-socket channel is open but not yet bound.
@@ -19,6 +19,10 @@ import java.io.IOException;
  * is used to initiate the accepting of connections to the channel's socket.
  * An attempt to invoke the <tt>accept</tt> method on an unbound channel will
  * cause a {@link NotYetBoundException} to be thrown.
+ * 异步服务器套接字通道是通过调用此类的* {@link #open open}方法创建的。 *新创建的异步服务器套接字通道已打开，但尚未绑定。
+ * 可以通过调用{@link #bind（SocketAddress，int）bind}方法将其绑定到本地地址并配置为侦听连接。绑定后，
+ * {@link #accept（Object，CompletionHandler）accept}方法*用于启动对通道套接字的连接的接受。
+ * 尝试在未绑定的通道上调用<tt> accept </ tt>方法将*引发{@link NotYetBoundException}。
  *
  * <p> Channels of this type are safe for use by multiple concurrent threads
  * though at most one accept operation can be outstanding at any time.

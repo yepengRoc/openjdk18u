@@ -35,6 +35,8 @@ import java.util.List;
  * main practical use for a file descriptor is to create a
  * <code>FileInputStream</code> or <code>FileOutputStream</code> to
  * contain it.
+ * 文件描述符类的实例用作表示打开的文件，打开的套接字或其他字节源或接收器的基础机器特定结构的不透明句柄。
+ * 文件描述符的主要实际用途是创建一个<code> FileInputStream </ code>或<code> FileOutputStream </ code>来包含它。
  * <p>
  * Applications should not create their own file descriptors.
  *

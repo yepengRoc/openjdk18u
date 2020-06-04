@@ -38,6 +38,7 @@ import sun.security.action.GetPropertyAction;
 
 /**
  * Service-provider class for selectors and selectable channels.
+ * 选择器和可选通道的服务提供者类。
  *
  * <p> A selector provider is a concrete subclass of this class that has a
  * zero-argument constructor and implements the abstract methods specified
@@ -45,6 +46,9 @@ import sun.security.action.GetPropertyAction;
  * system-wide default provider instance, which is returned by the {@link
  * #provider() provider} method.  The first invocation of that method will locate
  * the default provider as specified below.
+ * 选择器提供程序是此类的一个具体子类，具有零参数构造函数并实现下面指定的抽象方法。
+ * Java虚拟机的给定调用将维护单个系统范围的默认提供程序实例，该实例由{@link * #provider（）provider}方法返回。
+ * 该方法的第一次调用将找到*默认提供者，如下所示
  *
  * <p> The system-wide default provider is used by the static <tt>open</tt>
  * methods of the {@link java.nio.channels.DatagramChannel#open
@@ -56,6 +60,12 @@ import sun.security.action.GetPropertyAction;
  * method. A program may make use of a provider other than the default provider
  * by instantiating that provider and then directly invoking the <tt>open</tt>
  * methods defined in this class.
+ * {@link java.nio.channels.DatagramChannel＃open  DatagramChannel}，
+ * {@ link java.nio.channels.Pipe＃的静态<tt> open </ tt> 方法使用系统范围的默认提供程序。打开管道}，
+* {@ link * java.nio.channels.Selector＃open选择器}，{@ link * java.nio.channels.ServerSocketChannel＃open ServerSocketChannel}
+* 和{@link * java.nio.channels.SocketChannel＃open SocketChannel}类。 *
+ * {@link java.lang.System＃inheritedChannel System.inheritedChannel（）}方法也使用*。
+ * 程序可以通过实例化默认提供程序，然后直接调用此类中定义的<tt> open </ tt> 方法来使用默认提供程序*以外的提供程序。
  *
  * <p> All of the methods in this class are safe for use by multiple concurrent
  * threads.  </p>
@@ -129,10 +139,11 @@ public abstract class SelectorProvider {
     /**
      * Returns the system-wide default selector provider for this invocation of
      * the Java virtual machine.
+     * 返回此Java虚拟机调用的系统范围的默认选择器提供程序
      *
      * <p> The first invocation of this method locates the default provider
      * object as follows: </p>
-     *
+     *第一次调用此方法将查找默认提供程序*对象，如下所示
      * <ol>
      *
      *   <li><p> If the system property
@@ -140,19 +151,24 @@ public abstract class SelectorProvider {
      *   taken to be the fully-qualified name of a concrete provider class.
      *   The class is loaded and instantiated; if this process fails then an
      *   unspecified error is thrown.  </p></li>
-     *
+     *如果定义了系统属性<tt> java.nio.channels.spi.SelectorProvider </ tt>，
+     * 则它将被视为具体提供程序类的标准名称。 该类已加载并实例化；如果此过程失败，则会引发*未指定的错误
      *   <li><p> If a provider class has been installed in a jar file that is
      *   visible to the system class loader, and that jar file contains a
      *   provider-configuration file named
+     *   如果提供程序类已安装在系统类加载器可见的jar文件中，并且该jar文件包含名为以下名称的提供程序配置文件
      *   <tt>java.nio.channels.spi.SelectorProvider</tt> in the resource
      *   directory <tt>META-INF/services</tt>, then the first class name
      *   specified in that file is taken.  The class is loaded and
      *   instantiated; if this process fails then an unspecified error is
      *   thrown.  </p></li>
+     *   在资源*目录<tt> META-INF / services </ tt>中的java.nio.channels.spi.SelectorProvider
+     *   </ tt>中，则采用该文件中指定的第一个类名*\。该类已加载并实例化；如果此过程失败，则会引发未指定的错误。
      *
      *   <li><p> Finally, if no provider has been specified by any of the above
      *   means then the system-default provider class is instantiated and the
      *   result is returned.  </p></li>
+     *   最后，如果上述均未指定任何提供程序，则实例化系统默认提供程序类并返回结果。
      *
      * </ol>
      *

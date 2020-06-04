@@ -44,7 +44,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * indefinitely.  In order to ensure that the {@link #end end} method is always
  * invoked, these methods should be used within a
  * <tt>try</tt>&nbsp;...&nbsp;<tt>finally</tt> block:
- *
+ *此类封装了实现选择操作中断所需的低级机制。具体的选择器类必须*在分别调用可能无限期阻塞的I / O
+ * 操作之前和之后*分别调用{@link #begin begin}和{@link #end end}方法。为了确保始终调用{@link #end end}方法，
+ * 应在* <tt> try </ tt> ... <tt> finally </ tt>块中使用这些方法
  * <blockquote><pre>
  * try {
  *     begin();
@@ -59,6 +61,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * declares the abstract {@link #register register} method that is invoked by a
  * selectable channel's {@link AbstractSelectableChannel#register register}
  * method in order to perform the actual work of registering a channel.  </p>
+ *此类还定义了用于维护选择器的*取消键集以及从其通道的键集中删除键的方法，
+ * 并且*声明了由可选通道的{@link AbstractSelectableChannel调用的抽象{@link #register register}方法#register register}
+ * 方法，以便执行注册频道的实际工作。
  *
  *
  * @author Mark Reinhold

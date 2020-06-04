@@ -56,7 +56,7 @@ import java.util.Set;
  * register} method.  Cancelled keys are removed from the key set during
  * selection operations.  The key set itself is not directly modifiable.
  * 所有三个集合均为空。一个键被添加到选择器的键集中，作为通过通道的注册方法注册通道的副作用。在选择操作期间，已取消的键将从键集中删除。
- *  * 密钥集本身不能直接修改。
+ *   密钥集本身不能直接修改。
  * <p> A key is added to its selector's cancelled-key set when it is cancelled,
  * whether by closing its channel or by invoking its {@link SelectionKey#cancel
  * cancel} method.  Cancelling a key will cause its channel to be deregistered
@@ -146,7 +146,7 @@ import java.util.Set;
  *
  * <p> Selectors are themselves safe for use by multiple concurrent threads;
  * their key sets, however, are not.
- *
+ *选择器本身可以安全地供多个并发线程使用。 *但是，它们的密钥集不是。
  * <p> The selection operations synchronize on the selector itself, on the key
  * set, and on the selected-key set, in that order.  They also synchronize on
  * the cancelled-key set during steps (1) and (3) above.

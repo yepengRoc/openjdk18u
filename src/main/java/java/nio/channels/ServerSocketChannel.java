@@ -10,7 +10,7 @@ import java.nio.channels.spi.SelectorProvider;
 
 /**
  * A selectable channel for stream-oriented listening sockets.
- *
+ *面向流的侦听套接字的可选通道
  * <p> A server-socket channel is created by invoking the {@link #open() open}
  * method of this class.  It is not possible to create a channel for an arbitrary,
  * pre-existing {@link ServerSocket}. A newly-created server-socket channel is
@@ -18,7 +18,10 @@ import java.nio.channels.spi.SelectorProvider;
  * method of an unbound server-socket channel will cause a {@link NotYetBoundException}
  * to be thrown. A server-socket channel can be bound by invoking one of the
  * {@link #bind(java.net.SocketAddress,int) bind} methods defined by this class.
- *
+ *通过调用此类的{@link #open（）open} 方法来创建服务器套接字通道。无法为任意的，预先存在的{@link ServerSocket}创建通道。
+ * 新创建的服务器套接字通道已打开，但尚未绑定。尝试调用未绑定服务器套接字通道的{@link #accept（）accept}
+ * 方法将导致抛出{@link NotYetBoundException} 。可以通过调用此类定义的* {@link #bind（java.net.SocketAddress，int）bind}
+ * 方法之一来绑定服务器套接字通道。
  * <p> Socket options are configured using the {@link #setOption(SocketOption,Object)
  * setOption} method. Server-socket channels support the following options:
  * <blockquote>
@@ -40,6 +43,7 @@ import java.nio.channels.spi.SelectorProvider;
  * Additional (implementation specific) options may also be supported.
  *
  * <p> Server-socket channels are safe for use by multiple concurrent threads.
+ * 服务器套接字通道可安全用于多个并发线程。
  * </p>
  *
  * @author Mark Reinhold

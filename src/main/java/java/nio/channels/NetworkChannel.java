@@ -41,13 +41,16 @@ import java.io.IOException;
  * #getOption(SocketOption) getOption} methods are used to set and query socket
  * options.  An implementation of this interface should specify the socket options
  * that it supports.
+ * 实现此接口的通道是网络套接字的通道。 {@link #bind（SocketAddress）bind}方法用于将套接字绑定到本地{@link SocketAddress地址}，
+ * {@ link #getLocalAddress（）* getLocalAddress}方法返回套接字绑定到的地址以及* {@link #setOption（SocketOption，Object）setOption}
+ * 和{@link * #getOption（SocketOption）getOption}方法用于设置和查询套接字*选项。此接口的实现应指定它支持的套接字选项*。
  *
  * <p> The {@link #bind bind} and {@link #setOption setOption} methods that do
  * not otherwise have a value to return are specified to return the network
  * channel upon which they are invoked. This allows method invocations to be
  * chained. Implementations of this interface should specialize the return type
  * so that method invocations on the implementation class can be chained.
- *
+ *不具有返回值的{@link #bind bind}和{@link #setOption setOption}方法被指定为返回在其上调用它们的网络通道。这使方法调用可以链接在一起。此接口的实现应专用于返回类型*，以便可以链接实现类上的方法调用
  * @since 1.7
  */
 

@@ -51,6 +51,12 @@ import java.io.Closeable;
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
+ * 承上启下的I / O操作。
+ * 通道表示一个打开的连接到一个实体，如一个硬件设备，文件，网络套接字，或者能够执行一个或多个不同的I / O操作，例如读或写的程序组件。
+ *  通道是打开或关闭。 通道是在创建开放的，一旦关闭它仍然关闭。 一旦通道被关闭时，任何试图调用I / O操作后，它会导致ClosedChannelException被抛出。
+ * 是否进行了信道是开放可通过调用其被测试isOpen方法。
+ * 信道，在一般情况下，意在扩展和实现此接口的接口和类的规格说明对于多线程访问安全
  */
 
 public interface Channel extends Closeable {

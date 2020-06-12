@@ -150,6 +150,7 @@ import java.util.Collections;
  * @author Mike McCloskey
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
  */
 
 public abstract class FileChannel

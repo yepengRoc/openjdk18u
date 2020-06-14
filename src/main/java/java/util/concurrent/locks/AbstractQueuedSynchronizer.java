@@ -806,7 +806,8 @@ public abstract class AbstractQueuedSynchronizer
                         continue;            // loop to recheck cases
                     unparkSuccessor(h);//唤醒head后的节点
                 }
-                //这里为0 说明head已经不再队列里了。更改head的值为 -3，说明是一个共享节点
+                //这里为0 说明head已经不再队列里了。更改head的值为 -3，说明是一个共享节点。
+                //刚进入队列，还没设置为 -1，就被唤醒
                 else if (ws == 0 &&
                          !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))//节点状态由 0 设置为 -3.则进入无限循环中。
                     continue;                // loop on failed CAS
@@ -887,7 +888,7 @@ public abstract class AbstractQueuedSynchronizer
         // After this atomic step, other Nodes can skip past us.
         // Before, we are free of interference from other threads.
         //可以在此处使用无条件写入代替CAS。完成这一基本步骤后，其他节点可以跳过我们。以前，我们不受其他线程的干扰。
-        node.waitStatus = Node.CANCELLED;//
+        node.waitStatus = Node.CANCELLED;//进行赋值
 
         // If we are the tail, remove ourselves.
         if (node == tail && compareAndSetTail(node, pred)) {//如果当前节点是tail节点，则更新tail节点为pred，设置tail的nextweinull
@@ -1114,7 +1115,7 @@ public abstract class AbstractQueuedSynchronizer
                 if (p == head) {
                     int r = tryAcquireShared(arg);//直接进行锁的获取
                     if (r >= 0) {//获取成功，则向后传播
-                        setHeadAndPropagate(node, r);
+                        setHeadAndPropagate(node, r);//刚进入还没
                         p.next = null; // help GC
                         if (interrupted)
                             selfInterrupt();

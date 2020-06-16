@@ -1,39 +1,3 @@
-/*
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
-
-/*
- * This file is available under and governed by the GNU General Public
- * License version 2 only, as published by the Free Software Foundation.
- * However, the following notice accompanied the original version of this
- * file:
- *
- * Written by Doug Lea, Bill Scherer, and Michael Scott with
- * assistance from members of JCP JSR-166 Expert Group and released to
- * the public domain, as explained at
- * http://creativecommons.org/publicdomain/zero/1.0/
- */
-
 package java.util.concurrent;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -47,7 +11,7 @@ import java.util.concurrent.locks.LockSupport;
  * viewed as a bidirectional form of a {@link SynchronousQueue}.
  * Exchangers may be useful in applications such as genetic algorithms
  * and pipeline designs.
- *
+ * 线程可以配对并在配对内交换元素*的同步点。每个线程在进入* {@link #exchange exchange}方法时都会呈现一些对象，与一个伙伴线程匹配，并在返回时接收其伙伴的对象。可以将Exchanger视为{@link SynchronousQueue}的双向形式。 *交换器可能在遗传算法*和管道设计等应用中很有用
  * <p><b>Sample Usage:</b>
  * Here are the highlights of a class that uses an {@code Exchanger}
  * to swap buffers between threads so that the thread filling the
@@ -109,7 +73,7 @@ public class Exchanger<V> {
      * and a participant (caller) with an item:
      *
      * for (;;) {
-     *   if (slot is empty) {                       // offer
+     *   if (slot is empty) {                       // offer 加入
      *     place item in a Node;
      *     if (can CAS slot from empty to node) {
      *       wait for release;
@@ -123,7 +87,7 @@ public class Exchanger<V> {
      *   }
      *   // else retry on CAS failure
      * }
-     *
+     * 双端队列数据结构
      * This is among the simplest forms of a "dual data structure" --
      * see Scott and Scherer's DISC 04 paper and
      * http://www.cs.rochester.edu/research/synchronization/pseudocode/duals.html
@@ -271,6 +235,7 @@ public class Exchanger<V> {
     /**
      * Unit for sequence/version bits of bound field. Each successful
      * change to the bound also adds SEQ.
+     * 绑定字段的序列/版本位的单位。每次成功*更改边界时，都会添加SEQ。
      */
     private static final int SEQ = MMASK + 1;
 
@@ -295,6 +260,8 @@ public class Exchanger<V> {
      * Value representing null arguments/returns from public
      * methods. Needed because the API originally didn't disallow null
      * arguments, which it should have.
+     *
+     * 空对象
      */
     private static final Object NULL_ITEM = new Object();
 
@@ -302,6 +269,7 @@ public class Exchanger<V> {
      * Sentinel value returned by internal exchange methods upon
      * timeout, to avoid need for separate timed versions of these
      * methods.
+     * 超时对象
      */
     private static final Object TIMED_OUT = new Object();
 
@@ -311,13 +279,13 @@ public class Exchanger<V> {
      * contention.
      */
     @sun.misc.Contended static final class Node {
-        int index;              // Arena index
-        int bound;              // Last recorded value of Exchanger.bound
-        int collides;           // Number of CAS failures at current bound
-        int hash;               // Pseudo-random for spins
-        Object item;            // This thread's current item
-        volatile Object match;  // Item provided by releasing thread
-        volatile Thread parked; // Set to this thread when parked, else null
+        int index;              // Arena index  数组中的索引
+        int bound;              // Last recorded value of Exchanger.bound  最后的记录值
+        int collides;           // Number of CAS failures at current bound  冲突次数
+        int hash;               // Pseudo-random for spins  自旋随机数
+        Object item;            // This thread's current item  当前值
+        volatile Object match;  // Item provided by releasing thread  匹配值
+        volatile Thread parked; // Set to this thread when parked, else null 是否阻塞
     }
 
     /** The corresponding thread local class */
@@ -362,8 +330,11 @@ public class Exchanger<V> {
         Node[] a = arena;
         Node p = participant.get();
         for (int i = p.index;;) {                      // access slot at i
-            int b, m, c; long j;                       // j is raw array offset
+            int b, m, c; long j;                       // j is raw array offset j代表数组的偏移量。q标识数组中i位置的
             Node q = (Node)U.getObjectVolatile(a, j = (i << ASHIFT) + ABASE);
+            /**
+             * 说明数组的这个位置有值了，则设置为null
+             */
             if (q != null && U.compareAndSwapObject(a, j, q, null)) {
                 Object v = q.item;                     // release
                 q.match = item;
@@ -379,7 +350,7 @@ public class Exchanger<V> {
                     Thread t = Thread.currentThread(); // wait
                     for (int h = p.hash, spins = SPINS;;) {
                         Object v = p.match;
-                        if (v != null) {
+                        if (v != null) {//有匹配的了。
                             U.putOrderedObject(p, MATCH, null);
                             p.item = null;             // clear for next use
                             p.hash = h;
@@ -452,6 +423,10 @@ public class Exchanger<V> {
      * TIMED_OUT if timed and timed out
      */
     private final Object slotExchange(Object item, boolean timed, long ns) {
+        /**
+         * 获取当前线程的一个node. 可能有，可能没有
+         * 通过node交换数据
+         */
         Node p = participant.get();
         Thread t = Thread.currentThread();
         if (t.isInterrupted()) // preserve interrupt status so caller can recheck
@@ -459,15 +434,23 @@ public class Exchanger<V> {
 
         for (Node q;;) {
             if ((q = slot) != null) {
+                /**
+                 * slot不为null，说明已经设置了值。
+                 * 把slot置换为null.等待被释放
+                 * 可能到这里q 值也改变了
+                 */
                 if (U.compareAndSwapObject(this, SLOT, q, null)) {
                     Object v = q.item;
                     q.match = item;
                     Thread w = q.parked;
                     if (w != null)
                         U.unpark(w);
-                    return v;
+                    return v;//当前线程返回的是对方的值。对方的值可能有也可能没有
                 }
                 // create arena on contention, but continue until slot null
+                /**
+                 * 冲突了。则创建 数组
+                 */
                 if (NCPU > 1 && bound == 0 &&
                     U.compareAndSwapInt(this, BOUND, 0, SEQ))
                     arena = new Node[(FULL + 2) << ASHIFT];
@@ -475,8 +458,15 @@ public class Exchanger<V> {
             else if (arena != null)
                 return null; // caller must reroute to arenaExchange
             else {
+                /**
+                 * 第一次进来，走这段逻辑
+                 * 设置 node的item(可能有值，也可能没有值)
+                 * 设置slot的值。成功的话，则break退出
+                 * 失败的话（其它线程抢先一步），重置 p.item的值。
+                 * 然后继续 for循环
+                 */
                 p.item = item;
-                if (U.compareAndSwapObject(this, SLOT, null, p))
+                if (U.compareAndSwapObject(this, SLOT, null, p))//数据置换成功了。
                     break;
                 p.item = null;
             }
@@ -487,7 +477,7 @@ public class Exchanger<V> {
         long end = timed ? System.nanoTime() + ns : 0L;
         int spins = (NCPU > 1) ? SPINS : 1;
         Object v;
-        while ((v = p.match) == null) {
+        while ((v = p.match) == null) {//未有匹配者到来
             if (spins > 0) {
                 h ^= h << 1; h ^= h >>> 3; h ^= h << 10;
                 if (h == 0)
@@ -499,11 +489,11 @@ public class Exchanger<V> {
                 spins = SPINS;
             else if (!t.isInterrupted() && arena == null &&
                      (!timed || (ns = end - System.nanoTime()) > 0L)) {
-                U.putObject(t, BLOCKER, this);
+                U.putObject(t, BLOCKER, this);//使自己阻塞
                 p.parked = t;
                 if (slot == p)
-                    U.park(false, ns);
-                p.parked = null;
+                    U.park(false, ns);//阻塞被等待被唤醒
+                p.parked = null;//被唤醒了
                 U.putObject(t, BLOCKER, null);
             }
             else if (U.compareAndSwapObject(this, SLOT, p, null)) {
@@ -560,7 +550,15 @@ public class Exchanger<V> {
     @SuppressWarnings("unchecked")
     public V exchange(V x) throws InterruptedException {
         Object v;
+        /**
+         * x == null 则为 空值对象
+         *
+         */
         Object item = (x == null) ? NULL_ITEM : x; // translate null args
+        /**
+         * 第一次 arena == null
+         * 所以走 slotExchange 逻辑
+         */
         if ((arena != null ||
              (v = slotExchange(item, false, 0L)) == null) &&
             ((Thread.interrupted() || // disambiguates null return

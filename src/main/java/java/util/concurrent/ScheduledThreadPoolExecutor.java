@@ -912,6 +912,7 @@ public class ScheduledThreadPoolExecutor
 
         /**
          * Resizes the heap array.  Call only when holding lock.
+         * 每次扩容 50%
          */
         private void grow() {
             int oldCapacity = queue.length;

@@ -60,6 +60,16 @@ import sun.security.action.GetPropertyAction;
  * <p> All of the methods in this class are safe for use by multiple concurrent
  * threads.  </p>
  *
+ * 选择器和可选通道的服务提供者类。<p>选择器提供程序是此类的具体子类，它具有零参数构造函数并实现下面指定的抽象方法。
+ * Java虚拟机的给定调用将维护单个系统范围的默认提供程序实例，该实例由{@link #provider（）provider}方法返回。该
+ * 方法的首次调用将找到以下指定的默认提供程序。
+ * <p> {@link java.nio.channels.DatagramChannel＃open DatagramChannel}，
+ * {@ link java.nio.channels.Pipe的静态<tt> open </ tt>方法使用系统范围的默认提供程序。#open Pipe}，
+* {@ link java.nio.channels.Selector＃open选择器}，{@ link java.nio.channels.ServerSocketChannel＃open ServerSocketChannel}和
+* {@link java.nio.channels.SocketChannel＃open SocketChannel}类。{@link java.lang.System＃inheritedChannel System.inheritedChannel（）}
+ * 方法也使用它。程序可以通过实例化默认提供程序，然后直接调用此类中定义的<tt> open </ tt>
+ * 方法来使用默认提供程序以外的其他提供程序。<p>此类中的所有方法可以安全地被多个并发线程使用。</ p>
+ *
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group

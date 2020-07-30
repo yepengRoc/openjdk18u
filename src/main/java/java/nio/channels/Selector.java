@@ -1,27 +1,3 @@
-/*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can redistribute it and/or modify it
- * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
- *
- * This code is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- * version 2 for more details (a copy is included in the LICENSE file that
- * accompanied this code).
- *
- * You should have received a copy of the GNU General Public License version
- * 2 along with this work; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- *
- * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
- * or visit www.oracle.com if you need additional information or have any
- * questions.
- */
 
 package java.nio.channels;
 
@@ -33,7 +9,7 @@ import java.util.Set;
 
 /**
  * A multiplexor of {@link SelectableChannel} objects.
- *
+ *{@link SelectableChannel}对象的多路复用器。
  * <p> A selector may be created by invoking the {@link #open open} method of
  * this class, which will use the system's default {@link
  * java.nio.channels.spi.SelectorProvider selector provider} to
@@ -41,7 +17,10 @@ import java.util.Set;
  * {@link java.nio.channels.spi.SelectorProvider#openSelector openSelector}
  * method of a custom selector provider.  A selector remains open until it is
  * closed via its {@link #close close} method.
- *
+ *<p>可以通过调用以下方法的{@link #open open}方法来创建选择器：此类，
+ * 它将使用系统的默认{@linkjava.nio.channels.spi.SelectorProvider选择器提供程序}创建一个新的选择器。
+ * 选择器也可以通过调用{@link java.nio.channels.spi.SelectorProvider＃openSelector openSelector}自定义选择器提供程序的方法。
+ * 选择器保持打开状态直到通过其{@link #close close}方法关闭。
  * <a name="ks"></a>
  *
  * <p> A selectable channel's registration with a selector is represented by a

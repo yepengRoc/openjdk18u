@@ -151,11 +151,13 @@ public class ScheduledThreadPoolExecutor
 
     /**
      * False if should cancel/suppress periodic tasks on shutdown.
+     * 如果应在关机时取消/取消定期任务，则为False。
      */
     private volatile boolean continueExistingPeriodicTasksAfterShutdown;
 
     /**
      * False if should cancel non-periodic tasks on shutdown.
+     * 如果应在关闭时取消非定期任务，则为False。
      */
     private volatile boolean executeExistingDelayedTasksAfterShutdown = true;
 
@@ -286,7 +288,7 @@ public class ScheduledThreadPoolExecutor
          * Overrides FutureTask version so as to reset/requeue if periodic.
          */
         public void run() {
-            boolean periodic = isPeriodic();
+            boolean periodic = isPeriodic();//定时
             if (!canRunInCurrentRunState(periodic))
                 cancel(false);
             else if (!periodic)
@@ -326,9 +328,14 @@ public class ScheduledThreadPoolExecutor
             reject(task);
         else {
             super.getQueue().add(task);
+            /**
+             * 如果已经shutdowns 了。当前定时任务还没运行
+             * 移除任务。任务置取消
+             */
             if (isShutdown() &&
                 !canRunInCurrentRunState(task.isPeriodic()) &&
                 remove(task))
+                //
                 task.cancel(false);
             else
                 ensurePrestart();
@@ -527,6 +534,9 @@ public class ScheduledThreadPoolExecutor
                                        TimeUnit unit) {
         if (command == null || unit == null)
             throw new NullPointerException();
+        /**
+         * 包装 传入进来的 runnable 任务
+         */
         RunnableScheduledFuture<?> t = decorateTask(command,
             new ScheduledFutureTask<Void>(command, null,
                                           triggerTime(delay, unit)));

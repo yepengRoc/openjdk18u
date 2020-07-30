@@ -15,7 +15,7 @@ import sun.security.util.SecurityConstants;
  * ExecutorService}, {@link ScheduledExecutorService}, {@link
  * ThreadFactory}, and {@link Callable} classes defined in this
  * package. This class supports the following kinds of methods:
- *
+ * Executor 工具类，
  * <ul>
  *   <li> Methods that create and return an {@link ExecutorService}
  *        set up with commonly useful configuration settings.

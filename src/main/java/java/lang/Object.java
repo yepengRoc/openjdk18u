@@ -507,6 +507,7 @@ public class Object {
      * determines that there are no more references to the object.
      * A subclass overrides the {@code finalize} method to dispose of
      * system resources or to perform other cleanup.
+     * 当垃圾回收*确定不再有对该对象的引用时，由垃圾回收器在对象上调用。 *子类重写{@code finalize}方法以处置*系统资源或执行其他清理。
      * <p>
      * The general contract of {@code finalize} is that it is invoked
      * if and when the Java&trade; virtual

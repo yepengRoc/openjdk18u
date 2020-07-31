@@ -31,20 +31,23 @@ import sun.misc.Unsafe;
 
 /**
  * A direct byte buffer whose content is a memory-mapped region of a file.
+ * 一个直接字节缓冲区，其内容是文件的内存映射区域。
  *
  * <p> Mapped byte buffers are created via the {@link
  * java.nio.channels.FileChannel#map FileChannel.map} method.  This class
  * extends the {@link ByteBuffer} class with operations that are specific to
  * memory-mapped file regions.
+ * 映射的字节缓冲区是通过{@link * java.nio.channels.FileChannel＃map FileChannel.map}方法创建的。
+ * 此类*通过特定于*内存映射文件区域的操作扩展了{@link ByteBuffer}类。
  *
  * <p> A mapped byte buffer and the file mapping that it represents remain
  * valid until the buffer itself is garbage-collected.
- *
+ *映射的字节缓冲区及其表示的文件映射在缓冲区本身被垃圾回收之前一直有效
  * <p> The content of a mapped byte buffer can change at any time, for example
  * if the content of the corresponding region of the mapped file is changed by
  * this program or another.  Whether or not such changes occur, and when they
  * occur, is operating-system dependent and therefore unspecified.
- *
+ *映射字节缓冲区的内容可以随时更改，例如*如果此程序或其他程序更改了映射文件相应区域的内容。此类更改是否发生以及何时发生，取决于操作系统，因此未指定。
  * <a name="inaccess"></a><p> All or part of a mapped byte buffer may become
  * inaccessible at any time, for example if the mapped file is truncated.  An
  * attempt to access an inaccessible region of a mapped byte buffer will not
@@ -53,10 +56,11 @@ import sun.misc.Unsafe;
  * therefore strongly recommended that appropriate precautions be taken to
  * avoid the manipulation of a mapped file by this program, or by a
  * concurrently running program, except to read or write the file's content.
- *
+ * 例如，如果映射文件被截断，则映射字节缓冲区的全部或部分可能无法访问。 *尝试访问映射的字节缓冲区的不可访问区域不会*更改缓冲区的内容，
+ * 并且会导致在访问时或稍后发生未指定的异常。 *因此，强烈建议采取适当的预防措施，以免该程序或并发运行的程序对映射文件的操作，除非要读取或写入文件的内容。
  * <p> Mapped byte buffers otherwise behave no differently than ordinary direct
  * byte buffers. </p>
- *
+ *映射的字节缓冲区的行为与普通的直接*字节缓冲区没有什么不同
  *
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
@@ -71,11 +75,11 @@ public abstract class MappedByteBuffer
     // subclass of DirectByteBuffer, but to keep the spec clear and simple, and
     // for optimization purposes, it's easier to do it the other way around.
     // This works because DirectByteBuffer is a package-private class.
-
+    // 这有点倒退：按权利，MappedByteBuffer应该是DirectByteBuffer的一个子类，但是为了使规范清晰易懂，并且//出于优化目的，反之亦然。 //这是有效的，因为DirectByteBuffer是程序包专用的类。
     // For mapped buffers, a FileDescriptor that may be used for mapping
     // operations if valid; null if the buffer is not mapped.
     private final FileDescriptor fd;
-
+//    对于映射的缓冲区，一个FileDescriptor（如果有效）可用于映射//操作；如果未映射缓冲区，则为nul
     // This should only be invoked by the DirectByteBuffer constructors
     //
     MappedByteBuffer(int mark, int pos, int lim, int cap, // package-private
@@ -113,6 +117,7 @@ public abstract class MappedByteBuffer
     }
 
     /**
+     * resident 驻留
      * Tells whether or not this buffer's content is resident in physical
      * memory.
      *

@@ -185,6 +185,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
     /**
      * @throws CancellationException {@inheritDoc}
      * 如果 任务未执行完成，则进行等待  单链表
+     * 调用get方法的时候，如果任务没有执行完，则进行get线程阻塞 TODO
      */
     public V get() throws InterruptedException, ExecutionException {
         int s = state;

@@ -286,6 +286,7 @@ public class ScheduledThreadPoolExecutor
 
         /**
          * Overrides FutureTask version so as to reset/requeue if periodic.
+         * TODO 最终调用的这里
          */
         public void run() {
             boolean periodic = isPeriodic();//定时
@@ -293,6 +294,9 @@ public class ScheduledThreadPoolExecutor
                 cancel(false);
             else if (!periodic)
                 ScheduledFutureTask.super.run();
+            /**
+             * runAndReset 着重看下 TODO
+             */
             else if (ScheduledFutureTask.super.runAndReset()) {
                 setNextRunTime();
                 reExecutePeriodic(outerTask);
@@ -327,6 +331,9 @@ public class ScheduledThreadPoolExecutor
         if (isShutdown())
             reject(task);
         else {
+            /**
+             * 放入 DelayBlockQueue
+             */
             super.getQueue().add(task);
             /**
              * 如果已经shutdowns 了。当前定时任务还没运行
@@ -348,7 +355,7 @@ public class ScheduledThreadPoolExecutor
      *
      * @param task the task
      */
-    void reExecutePeriodic(RunnableScheduledFuture<?> task) {
+    void  reExecutePeriodic(RunnableScheduledFuture<?> task) {
         if (canRunInCurrentRunState(true)) {
             super.getQueue().add(task);
             if (!canRunInCurrentRunState(true) && remove(task))

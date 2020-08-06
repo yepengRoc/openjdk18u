@@ -397,13 +397,16 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
 
     // runState is stored in the high-order bits
     /**
-     * 101 运行是状态 （负值） -1
+     * 负数的二进制是以正数的补码表示的
+     *
+     * 高3位
+     * 111 运行是状态 （负值）
      * 000 关闭状态  0
      * 001 停止状态  1
      * 010 死亡      2
      * 011 终止      3
      */
-    private static final int RUNNING    = -1 << COUNT_BITS;// 101
+    private static final int RUNNING    = -1 << COUNT_BITS;// 11100000（29个0）
     private static final int SHUTDOWN   =  0 << COUNT_BITS;
     private static final int STOP       =  1 << COUNT_BITS;
     /**
@@ -415,7 +418,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
     // Packing and unpacking ctl
 
     /**
-     * ~CAPACITY  = 1110000...（29个0）
+     * ~CAPACITY  = 01110000...（29个0）
      * c & ~CAPACITY 取高3位，统计线程状态
      * c & CAPACITY 取低29位，统计线程数
      * rs | wc 高位和低位合并，统计 ctl的实际值
@@ -963,7 +966,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                    ! workQueue.isEmpty()))
                 return false;
 
-            for (;;) {
+            for (;;) {//内层循环
                 int wc = workerCountOf(c);//获取工作线程数
                 //超过上限返回false
                 if (wc >= CAPACITY ||
@@ -977,15 +980,21 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                  */
                 c = ctl.get();  // Re-read ctl
                 /**
-                 * 再次校验运行状态，变化了，则重试。已经是运行状态，则不需要重试。不是运行状态需要重试。
-                 * 走到这一步，肯定是运行状态了，如果不是的话，则上面就已经return false了
+                 * 再次校验运行状态，变化了或者不是运行状态需要重试,则重试（外层retry）。
+                 * 已经是运行状态，则重试加work线程数（内存循环）
+                 * 走到这一步，rs记录的肯定是运行状态了，
+                 * 如果不是的话，则上面就已经return false了。
+                 * 再次判断线程池的状态控制变量c是否是运行状态，
+                 * 因为上面的判断到这段代码之间存在并发可能，或者其他修改了线程池状态的操作
                  */
                 if (runStateOf(c) != rs)
                     continue retry;
                 // else CAS failed due to workerCount change; retry inner loop
             }
         }
-
+        /**
+         * woker数成功加1
+         */
         boolean workerStarted = false;
         boolean workerAdded = false;
         Worker w = null;
@@ -1031,7 +1040,12 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                  *
                  */
                 if (workerAdded) {
-                    t.start();//调用worker中的run方法
+                    /**
+                     * t是worker中的线程，因为在创建t的时候，把worker传递给了
+                     * t,因为worker实现了runnable。所以这里的t.start()
+                     * 实际执行的是worker.run方法
+                     */
+                    t.start();
                     workerStarted = true;
                 }
             }
@@ -1056,7 +1070,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         final ReentrantLock mainLock = this.mainLock;
         mainLock.lock();
         try {
-            if (w != null)
+            if (w != null)//添加失败，移除当前worker
                 workers.remove(w);//移除
             decrementWorkerCount();
             tryTerminate();
@@ -1105,10 +1119,14 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 int min = allowCoreThreadTimeOut ? 0 : corePoolSize;
                 if (min == 0 && ! workQueue.isEmpty())
                     min = 1;
+                /**
+                 * 线程池的最小worker数 大于最小线程数，则不增加了
+                 */
                 if (workerCountOf(c) >= min)
                     return; // replacement not needed
             }
             /**
+             * 到这一步，说明线程数小于最小线程数了，需要增加一个线程去跑任务
              * 线程不是停止，关闭或运行状态。
              * 新添加
              */
@@ -1225,6 +1243,18 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
      * and the thread's UncaughtExceptionHandler have as accurate
      * information as we can provide about any problems encountered by
      * user code.
+     * 主工作者运行循环。反复从队列中获取任务并执行它们，同时解决许多问题：
+     * 1.我们可以从初始任务开始，在这种情况下，我们不需要获取第一个任务。
+     * 否则，只要池正在运行，我们就会从getTask获取任务。如果返回null，则工作程序将由于更改的池状态或配置参数而退出。
+     * 其他退出是由于外部代码中的异常引发而导致的，在这种情况下，completedAbruptly成立，这通常导致processWorkerExit替换此线程。
+     * 2.在运行任何任务之前，先获取锁，以防止任务执行时其他池中断，然后确保除非池正在停止，否则此线程不会设置其中断。
+     * 3.每个任务运行之前都会调用beforeExecute，这可能会引发异常，在这种情况下，我们将导致线程死掉（中断，带有completelyAbruptly true的循环），而不处理该任务。
+     * 4.假定beforeExecute正常完成，我们运行任务，收集其引发的任何异常以发送给afterExecute。我们分别处理RuntimeException，Error（规范保证我们可以捕获它们）
+     * 和任意Throwables。由于我们无法在Runnable.run中抛出Throwable，因此我们将它们包装在Errors中（输出到线程的UncaughtExceptionHandler）。
+     * 任何抛出的异常也会保守地导致线程死亡。
+     * 5. task.run完成后，我们调用afterExecute，这也可能引发异常，这也将导致线程死亡。根据JLS Sec 14.20，此异常是即使task.run抛出也会生效的异常。
+     *
+     * 异常机制的最终结果是afterExecute和线程的UncaughtExceptionHandler具有与我们所能提供的有关用户代码遇到的任何问题的准确信息。
      *
      * @param w the worker
      */
@@ -1526,9 +1556,10 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
                 addWorker(null, false);
         }
         /**
-         * 如果添加任务失败，说明等待队列满了
-         *  1已经达到core 核心线程数量
-         *  这里的添加也会失败，说明已经达到了最大核心线程数。然后走拒绝策略
+         * 如果上面添加任务失败，且 workQueue.offer(command)失败，
+         *  说明已经达到core 核心线程数量。且等待队列满了
+         *
+         *  这里的添加也会失败，说明已经达到了max最大核心线程数。然后走拒绝策略
          */
         else if (!addWorker(command, false))//添加。使用 max 线程执行
             reject(command);

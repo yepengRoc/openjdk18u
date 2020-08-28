@@ -257,6 +257,7 @@ public class Exchanger<V> {
     /**
      * The byte distance (as a shift value) between any two used slots
      * in the arena.  1 << ASHIFT should be at least cacheline size.
+     * 防止不同的值 放到了一个缓存行上。所以不同的值是填充了的。64位机器 所以差 1<<7 64
      */
     private static final int ASHIFT = 7;
 

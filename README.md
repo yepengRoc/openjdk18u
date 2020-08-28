@@ -4,6 +4,8 @@ jdk8api地址：https://docs.oracle.com/javase/8/docs/api/
 
 1.8.0.242
 
+jdk8 api地址：https://docs.oracle.com/javase/8/docs/api/
+
 这里下载的是openjdk
 
 opjdk下载地址

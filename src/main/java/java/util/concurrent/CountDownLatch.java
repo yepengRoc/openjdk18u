@@ -155,6 +155,15 @@ import java.util.concurrent.locks.AbstractQueuedSynchronizer;
  */
 public class CountDownLatch {
     /**
+     * 使用： 初始化 state 是一个大于0的数
+     * sync子类tryAcquireShared实现中，如果state == 0 返回1 否则返回-1
+     *
+     * 生产 state 数目个线程 调用 CountDownLatch.countDown(); 这是一个释放锁的动作。直到 state == 0,最后 tryAcquireShared 返回1 阻塞的线程开始
+     *
+     * 在生产线程里 调用 CountDownLatch.await(); 如果 tryAcquireShared 小于0，入队aqs队列，在阻塞过程中如果 tryAcquireShared < 0进行阻塞
+     *  使当前线程阻塞，当 state数目的线程都执行完后,可以在主线程中获取一个结果
+     */
+    /**
      * Synchronization control For CountDownLatch.
      * Uses AQS state to represent count.
      */
@@ -181,7 +190,7 @@ public class CountDownLatch {
                     return false;
                 int nextc = c-1;
                 if (compareAndSetState(c, nextc))
-                    return nextc == 0;
+                    return nextc == 0;//最后一次减为0的时候才会返回true,否则一直返回false
             }
         }
     }

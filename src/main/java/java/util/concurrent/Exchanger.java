@@ -294,7 +294,7 @@ public class Exchanger<V> {
     }
 
     /**
-     * Per-thread state
+     * Per-thread state 每个线程的状态
      */
     private final Participant participant;
 
@@ -559,8 +559,8 @@ public class Exchanger<V> {
          * 第一次 arena == null
          * 所以走 slotExchange 逻辑
          */
-        if ((arena != null ||
-             (v = slotExchange(item, false, 0L)) == null) &&
+        if ((arena != null || (v = slotExchange(item, false, 0L)) == null)
+                &&
             ((Thread.interrupted() || // disambiguates null return
               (v = arenaExchange(item, false, 0L)) == null)))
             throw new InterruptedException();

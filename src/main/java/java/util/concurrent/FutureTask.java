@@ -197,6 +197,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
 
     /**
      * @throws CancellationException {@inheritDoc}  TODO
+     * @throws CancellationException {@inheritDoc}
+     * 如果 任务未执行完成，则进行等待  单链表
+     * 调用get方法的时候，如果任务没有执行完，则进行get线程阻塞 TODO
      */
     public V get() throws InterruptedException, ExecutionException {
         int s = state;
@@ -243,7 +246,7 @@ public class FutureTask<V> implements RunnableFuture<V> {
         if (UNSAFE.compareAndSwapInt(this, stateOffset, NEW, COMPLETING)) {
             outcome = v;
             UNSAFE.putOrderedInt(this, stateOffset, NORMAL); // final state
-            finishCompletion();
+            finishCompletion();//完成
         }
     }
 
@@ -284,6 +287,9 @@ public class FutureTask<V> implements RunnableFuture<V> {
                     setException(ex);
                 }
                 if (ran)
+                /**
+                 * 关注set方法 TODO
+                 */
                     set(result);
             }
         } finally {

@@ -1165,6 +1165,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
             /**
              * 初始化底层h数组
              * 扩容之后，继续循环
+             * TODO
              */
                 tab = initTable();
             else if ((f = tabAt(tab, i = (n - 1) & hash)) == null) {//如果当前位置没有元素。则cas设置key  value.成功则退出
@@ -2807,7 +2808,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 else if (counterCells != as || n >= NCPU)//counterCells 又改变了数组容量已经超过了cpu数
                     collide = false;// At max size or stale
                 /**
-                 * 走到这里如果，冲突为false的话，则设置为true
+                 * 走到这里如果，冲突为false的话，则设置为true。标识真的冲突了
                  */
                 else if (!collide)//冲突了，hash冲突了，同一个位置上有东西，而且多个线程在操作
                     collide = true;
@@ -2866,7 +2867,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                          */
                         rs[h & 1] = new CounterCell(x);
                         counterCells = rs;
-                        init = true;//初始化古了
+                        init = true;//初始化过了
                     }
                 } finally {
                     cellsBusy = 0;//修改cellsBusy 为0

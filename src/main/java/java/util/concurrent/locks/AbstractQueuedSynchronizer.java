@@ -811,7 +811,7 @@ public abstract class AbstractQueuedSynchronizer
                          !compareAndSetWaitStatus(h, 0, Node.PROPAGATE))//节点状态由 0 设置为 -3.则进入无限循环中。
                     continue;                // loop on failed CAS
             }
-            if (h == head)                   // loop if head changed
+            if (h == head)                   // loop if head changed 如果head变了，则继续循环
                 break;
         }
     }
@@ -898,7 +898,7 @@ public abstract class AbstractQueuedSynchronizer
             int ws;
             if (pred != head &&
                 ((ws = pred.waitStatus) == Node.SIGNAL ||
-                        //有可能等待在condition上，或者是共享节点。统一设置为singnal
+                        //有可能等待在condition上 -2，或者是共享节点。统一设置为singnal
                  (ws <= 0 && compareAndSetWaitStatus(pred, ws, Node.SIGNAL))) &&
                 pred.thread != null) {
                 Node next = node.next;
@@ -1144,7 +1144,7 @@ public abstract class AbstractQueuedSynchronizer
             for (;;) {
                 final Node p = node.predecessor();
                 if (p == head) {
-                    int r = tryAcquireShared(arg);
+                    int r = tryAcquireShared(arg);//会卡在这里
                     if (r >= 0) {
                         setHeadAndPropagate(node, r);
                         p.next = null; // help GC
@@ -2252,7 +2252,7 @@ public abstract class AbstractQueuedSynchronizer
             int savedState = fullyRelease(node);
             int interruptMode = 0;
             while (!isOnSyncQueue(node)) {//不再同步队列中，说明已经进入condition队列了
-                LockSupport.park(this);//进行挂起。最后沟通过single 或singleAll唤醒
+                LockSupport.park(this);//进行挂起。最后通过single 或singleAll唤醒
                 //不等于0 说明没有中断。 等于 -1 或 1都是中断。 -1说明已经从condition队列到同步队列。1说明已经进入同步队列了
                 if ((interruptMode = checkInterruptWhileWaiting(node)) != 0)//-1已经进入同步队列 1标识让出当前资源  退出
                     break;

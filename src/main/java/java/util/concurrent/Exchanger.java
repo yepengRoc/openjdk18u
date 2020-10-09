@@ -266,13 +266,13 @@ public class Exchanger<V> {
      * than (1<<(31-ASHIFT)). The cap of 255 (0xff) more than suffices
      * for the expected scaling limits of the main algorithms.
      */
-    private static final int MMASK = 0xff;
+    private static final int MMASK = 0xff;//255
 
     /**
      * Unit for sequence/version bits of bound field. Each successful
      * change to the bound also adds SEQ.
      */
-    private static final int SEQ = MMASK + 1;
+    private static final int SEQ = MMASK + 1;//256
 
     /** The number of CPUs, for sizing and spin control */
     private static final int NCPU = Runtime.getRuntime().availableProcessors();
@@ -282,7 +282,7 @@ public class Exchanger<V> {
      * can in principle hold all threads without contention, or at
      * most the maximum indexable value.
      */
-    static final int FULL = (NCPU >= (MMASK << 1)) ? MMASK : NCPU >>> 1;
+    static final int FULL = (NCPU >= (MMASK << 1)) ? MMASK : NCPU >>> 1;//cpu核心数大于512 则取256.否则取cpu核心数/2
 
     /**
      * The bound for spins while waiting for a match. The actual
@@ -313,11 +313,11 @@ public class Exchanger<V> {
     @sun.misc.Contended static final class Node {
         int index;              // Arena index
         int bound;              // Last recorded value of Exchanger.bound
-        int collides;           // Number of CAS failures at current bound
-        int hash;               // Pseudo-random for spins
+        int collides;           // Number of CAS failures at current bound  冲突次数
+        int hash;               // Pseudo-random for spins 伪随机旋转
         Object item;            // This thread's current item
         volatile Object match;  // Item provided by releasing thread
-        volatile Thread parked; // Set to this thread when parked, else null
+        volatile Thread parked; // Set to this thread when parked, else null  记录阻塞的线程 或者 为null
     }
 
     /** The corresponding thread local class */
@@ -361,10 +361,21 @@ public class Exchanger<V> {
      */
     private final Object arenaExchange(Object item, boolean timed, long ns) {
         Node[] a = arena;
+        /**
+         * 获取当前线程中的node
+         */
         Node p = participant.get();
+        /**
+         * p.index 记录的是 arena 数组中的索引
+         *
+         */
         for (int i = p.index;;) {                      // access slot at i
+            /**
+             * bound match collides
+             */
             int b, m, c; long j;                       // j is raw array offset
             Node q = (Node)U.getObjectVolatile(a, j = (i << ASHIFT) + ABASE);
+            //获取数组中当前位置的值，并置为null
             if (q != null && U.compareAndSwapObject(a, j, q, null)) {
                 Object v = q.item;                     // release
                 q.match = item;
@@ -373,6 +384,12 @@ public class Exchanger<V> {
                     U.unpark(w);
                 return v;
             }
+            /**
+             * 要么当前位置为null
+             * 或者cas 失败。说明当前位置已经被置换为null了。最后都是null
+             * bound) & MMASK bound是数组的最大长度。如果小于 255则 一直为255.大于255的时候为 bound自身的值
+             *
+             */
             else if (i <= (m = (b = bound) & MMASK) && q == null) {
                 p.item = item;                         // offer
                 if (U.compareAndSwapObject(a, j, null, p)) {
@@ -380,7 +397,7 @@ public class Exchanger<V> {
                     Thread t = Thread.currentThread(); // wait
                     for (int h = p.hash, spins = SPINS;;) {
                         Object v = p.match;
-                        if (v != null) {
+                        if (v != null) {//说明已经被其它线程置换了。则直接返回
                             U.putOrderedObject(p, MATCH, null);
                             p.item = null;             // clear for next use
                             p.hash = h;
@@ -394,22 +411,32 @@ public class Exchanger<V> {
                                      (--spins & ((SPINS >>> 1) - 1)) == 0)
                                 Thread.yield();        // two yields per wait
                         }
-                        else if (U.getObjectVolatile(a, j) != p)
+                        else if (U.getObjectVolatile(a, j) != p)//说明数组中j位置的 值已经变了。重置自旋次数
                             spins = SPINS;       // releaser hasn't set match yet
                         else if (!t.isInterrupted() && m == 0 &&
                                  (!timed ||
                                   (ns = end - System.nanoTime()) > 0L)) {
                             U.putObject(t, BLOCKER, this); // emulate LockSupport
                             p.parked = t;              // minimize window
-                            if (U.getObjectVolatile(a, j) == p)
+                            if (U.getObjectVolatile(a, j) == p)//值没有改变。阻塞当前线程
                                 U.park(false, ns);
+                            /**
+                             * 说明 说明数组中j位置的 值已经变了
+                             * 或者被唤醒
+                             */
                             p.parked = null;
                             U.putObject(t, BLOCKER, null);
                         }
+                        /**
+                         * 说明线程中断了或超时了 或者一直没有匹配到
+                         */
                         else if (U.getObjectVolatile(a, j) == p &&
                                  U.compareAndSwapObject(a, j, p, null)) {
+                            /**
+                             * 从新换一个位置尝试下。
+                             */
                             if (m != 0)                // try to shrink
-                                U.compareAndSwapInt(this, BOUND, b, b + SEQ - 1);
+                                U.compareAndSwapInt(this, BOUND, b, b + SEQ - 1);//
                             p.item = null;
                             p.hash = h;
                             i = p.index >>>= 1;        // descend
@@ -421,7 +448,7 @@ public class Exchanger<V> {
                         }
                     }
                 }
-                else
+                else//说明p已经置换了。
                     p.item = null;                     // clear offer
             }
             else {
@@ -466,19 +493,22 @@ public class Exchanger<V> {
                 /**
                  * slot不为null .则把slot 设置为null
                  * 标识一次交换完成
+                 *
+                 * q表示 slot 中存放的Node .等待被置换
                  */
                 if (U.compareAndSwapObject(this, SLOT, q, null)) {
-                    Object v = q.item;
-                    q.match = item;
-                    Thread w = q.parked;
+                    Object v = q.item;//取 slot的 item
+                    q.match = item;//slot 中的match 记录为置换线程中的item
+                    Thread w = q.parked;//slot 中的park 记录阻塞的线程
                     if (w != null)
                         U.unpark(w);
                     return v;
                 }
                 /**
-                 * 设置失败。说明多个喜爱昵称竞争了
+                 * 设置失败。说明多个线程竞争了
                  * 成功的已经返回。没有成功地 需要继续等待置换
-                 * 创建数组
+                 * 创建数组。
+                 * cpu核心数大于1 且数组 bound 为0
                  */
                 // create arena on contention, but continue until slot null
                 if (NCPU > 1 && bound == 0 &&
@@ -491,7 +521,7 @@ public class Exchanger<V> {
                 /**
                  * slot为null
                  * arean为null
-                 *
+                 * 设置 slot为当前传入的item
                  */
                 p.item = item;
                 //成功。则跳出循环等待被匹配
@@ -503,28 +533,40 @@ public class Exchanger<V> {
         }
 
         // await release
-        //是吧
+        /**
+         * 等待释放。走到这一步
+         * 说明 当前slot U.compareAndSwapObject(this, SLOT, null, p) 成功了
+         * 等待被置换
+         */
         int h = p.hash;
         long end = timed ? System.nanoTime() + ns : 0L;
         int spins = (NCPU > 1) ? SPINS : 1;
         Object v;
         while ((v = p.match) == null) {
-            if (spins > 0) {
+            if (spins > 0) {//自旋
                 h ^= h << 1; h ^= h >>> 3; h ^= h << 10;
                 if (h == 0)
                     h = SPINS | (int)t.getId();
                 else if (h < 0 && (--spins & ((SPINS >>> 1) - 1)) == 0)
                     Thread.yield();
             }
-            else if (slot != p)
+            else if (slot != p)//slot变了。说明已经被置换了。重置 spins
                 spins = SPINS;
+            /**
+             * 当前线程没有中断。arena 为null
+             * 没有超时。
+             * 设置线程中的parkBlocker 为 当前exchange对象
+             * 设置slot 中的 parked 为当前线程
+             */
             else if (!t.isInterrupted() && arena == null &&
                      (!timed || (ns = end - System.nanoTime()) > 0L)) {
                 U.putObject(t, BLOCKER, this);
                 p.parked = t;
-                if (slot == p)
+                if (slot == p)//slot没有改变。则进行阻塞操作
                     U.park(false, ns);
-                //说明slot变了
+                /**
+                 * 说明slot变了。或者当前线程被唤醒了或者超时
+                 */
                 p.parked = null;
                 U.putObject(t, BLOCKER, null);
             }
@@ -533,6 +575,9 @@ public class Exchanger<V> {
                 break;
             }
         }
+        /**
+         * 重置 p 中的内容。这个时候 p已经不指向slot 了
+         */
         U.putOrderedObject(p, MATCH, null);
         p.item = null;
         p.hash = h;
@@ -588,6 +633,10 @@ public class Exchanger<V> {
     public V exchange(V x) throws InterruptedException {
         Object v;
         Object item = (x == null) ? NULL_ITEM : x; // translate null args
+        /**
+         * 第一次arena == null
+         * 逻辑走 slotExchange
+         */
         if ((arena != null ||
              (v = slotExchange(item, false, 0L)) == null) &&
             ((Thread.interrupted() || // disambiguates null return

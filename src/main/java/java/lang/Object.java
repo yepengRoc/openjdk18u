@@ -383,6 +383,11 @@ public class Object {
     /**
      *当垃圾回收确定不再有对该对象的引用时，由垃圾回收器在对象上调用。
      * 子类覆盖finalize方法以处置系统资源或执行其他清除。
+     * Called by the garbage collector on an object when garbage collection
+     * determines that there are no more references to the object.
+     * A subclass overrides the {@code finalize} method to dispose of
+     * system resources or to perform other cleanup.
+     * 当垃圾回收*确定不再有对该对象的引用时，由垃圾回收器在对象上调用。 *子类重写{@code finalize}方法以处置*系统资源或执行其他清理。
      * <p>
      * finalize的一般约定是，当Java™虚拟机确定不再有任何手段可以使尚未死亡的任何线程可以访问该对象时（除非由于执行操作而导致），
      * 调用finalize。由完成的其他一些对象或类的完成确定。finalize方法可以采取任何措施，包括使该对象可再次用于其他线程。

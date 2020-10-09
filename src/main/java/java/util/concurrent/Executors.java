@@ -1,4 +1,5 @@
 package java.util.concurrent;
+
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.security.AccessControlContext;
@@ -15,6 +16,7 @@ import sun.security.util.SecurityConstants;
  * ThreadFactory}, and {@link Callable} classes defined in this
  * package. This class supports the following kinds of methods:
  *此程序包中定义的Executor，ExecutorService，ScheduledExecutorService，ThreadFactory和Callable类的工厂和实用程序方法。此类支持以下方法：
+ * Executor 工具类，
  * <ul>
  *   <li> Methods that create and return an {@link ExecutorService}
  *        set up with commonly useful configuration settings.

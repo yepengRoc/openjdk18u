@@ -13,7 +13,7 @@ import java.util.Collections;
 
 /**
  * A channel for reading, writing, mapping, and manipulating a file.
- *
+ * 用于读取，写入，映射和操作文件的通道。
  * <p> A file channel is a {@link SeekableByteChannel} that is connected to
  * a file. It has a current <i>position</i> within its file which can
  * be both {@link #position() <i>queried</i>} and {@link #position(long)
@@ -125,6 +125,7 @@ import java.util.Collections;
  * @author Mike McCloskey
  * @author JSR-51 Expert Group
  * @since 1.4
+ *
  */
 
 public abstract class FileChannel

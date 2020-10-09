@@ -58,7 +58,8 @@ import java.lang.reflect.Constructor;
  * lighter weight than a normal thread.  Huge numbers of tasks and
  * subtasks may be hosted by a small number of actual threads in a
  * ForkJoinPool, at the price of some usage limitations.
- *
+ *在{@link ForkJoinPool}中运行的任务的抽象基类。 * {@code ForkJoinTask}是类似于线程的实体，其权重比普通线程轻得多。 *
+ * ForkJoinPool中可能由少量实际线程托管大量任务和*子任务，使用有限资源。
  * <p>A "main" {@code ForkJoinTask} begins execution when it is
  * explicitly submitted to a {@link ForkJoinPool}, or, if not already
  * engaged in a ForkJoin computation, commenced in the {@link
@@ -223,6 +224,12 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * (3) user-level methods that additionally report results.
      * This is sometimes hard to see because this file orders exported
      * methods in a way that flows well in javadocs.
+     *
+     * 有关一般的实现概述，请参见类ForkJoinPool的内部文档。
+     * ForkJoinTasks在中继到ForkJoinWorkerThread和ForkJoinPool中的方法中，
+     * 主要负责维护其“状态”字段。
+     * 此类的方法大致分为（1）基本状态维护（2）执行和等待完成（3）用户级方法（另外报告结果）。
+     * 有时很难看到，因为此文件以在Javadocs中良好流动的方式对导出的方法进行排序。
      */
 
     /*
@@ -245,6 +252,14 @@ public abstract class ForkJoinTask<V> implements Future<V>, Serializable {
      * These control bits occupy only (some of) the upper half (16
      * bits) of status field. The lower bits are used for user-defined
      * tags.
+     *
+     * 状态字段将运行控制状态位打包为一个单个int以最小化占用空间并确保原子性（通过CAS）。
+     * 状态最初为零，并且取非负数值，直到完成，处于哪个状态（以及DONE_MASK）的值是NORMAL，
+     * CANCELLED或EXCEPTIONAL。任务正在进行其他线程的阻塞等待的信号位组。
+     * 使用SIGNAL设置完成被盗任务会唤醒任何通过notifyAll waiter。即使某些情况不是最佳目的，
+     * 我们使用基本的内置等待/通知来利用否则我们需要在JVM中进行“监控通货膨胀”模拟以避免增加更多的按任务记帐的开销。
+     * 我们希望这些监视器“胖”，即不要使用偏差或细锁技术，因此请使用一些倾向于为了避免它们，主要是通过安排每个同步块执行一个wait，
+     * notifyAll或两者。这些控制位仅占据（一半）上半部分（16位）。低位用于用户定义标签。
      */
 
     /** The run status of this task */

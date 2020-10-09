@@ -138,7 +138,7 @@ import java.security.Permissions;
  * {@linkplain System#getProperty system properties}:
  * <ul>
  * <li>{@code java.util.concurrent.ForkJoinPool.common.parallelism}
- * - the parallelism level, a non-negative integer
+ * - the parallelism level, a non-negative integer  并行度，非负正整数
  * <li>{@code java.util.concurrent.ForkJoinPool.common.threadFactory}
  * - the class name of a {@link ForkJoinWorkerThreadFactory}
  * <li>{@code java.util.concurrent.ForkJoinPool.common.exceptionHandler}

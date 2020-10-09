@@ -423,18 +423,21 @@ public class Exchanger<V> {
                     p.item = null;                     // clear offer
             }
             else {
+                /**
+                 * 重置 数组大小。冲突次数
+                 */
                 if (p.bound != b) {                    // stale; reset
                     p.bound = b;
                     p.collides = 0;
-                    i = (i != m || m == 0) ? m : m - 1;
+                    i = (i != m || m == 0) ? m : m - 1;//换一个位置
                 }
                 else if ((c = p.collides) < m || m == FULL ||
-                         !U.compareAndSwapInt(this, BOUND, b, b + SEQ + 1)) {
-                    p.collides = c + 1;
+                         !U.compareAndSwapInt(this, BOUND, b, b + SEQ + 1)) {//改变数组大小
+                    p.collides = c + 1;//记录冲突次数
                     i = (i == 0) ? m : i - 1;          // cyclically traverse
                 }
                 else
-                    i = m + 1;                         // grow
+                    i = m + 1;                         // grow  换一个位置试试。 索引加1
                 p.index = i;
             }
         }

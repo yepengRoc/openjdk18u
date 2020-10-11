@@ -82,6 +82,10 @@ public abstract class AbstractExecutorService implements ExecutorService {
          * futuretask 最终是一个callable
          * 最底层是一个 RunnableAdapter
          *      记录一个runnable  和 一个value
+         * 执行线程任务调用的是futuretask 的run方法,
+         * 在run方法中 调用 RunnableAdapter 中的call方法，得到一个结果，然后把结果
+         * 存储在 futuretask中的outcome中。
+         * 最后调用 get 方法，返回的是 futuretask中的 outcome结果
          */
         RunnableFuture<Void> ftask = newTaskFor(task, null);
         execute(ftask);

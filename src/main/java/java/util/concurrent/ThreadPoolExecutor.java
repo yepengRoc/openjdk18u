@@ -1199,7 +1199,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
         int c = ctl.get();
         if (runStateLessThan(c, STOP)) {
             if (!completedAbruptly) {
-                int min = allowCoreThreadTimeOut ? 0 : corePoolSize;
+                int min = allowCoreThreadTimeOut ? 0 : corePoolSize;//如果线程不允许超时，则线程 最小一直是0.如果允许超时。线程数小于core时，则创建
                 if (min == 0 && ! workQueue.isEmpty())
                     min = 1;
                 /**
@@ -1638,7 +1638,7 @@ public class ThreadPoolExecutor extends AbstractExecutorService {
             /**
              * 不是运行状态，则移除任务。进行拒绝
              */
-            if (! isRunning(recheck) && remove(command))
+            if (!isRunning(recheck) && remove(command))
                 reject(command);
             /**
              * 工作线程数没有，则新增工作线程

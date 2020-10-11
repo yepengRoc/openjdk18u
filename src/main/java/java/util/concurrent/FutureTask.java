@@ -268,13 +268,16 @@ public class FutureTask<V> implements RunnableFuture<V> {
         }
     }
 
+    /**
+     * TODO
+     */
     public void run() {
         if (state != NEW ||
             !UNSAFE.compareAndSwapObject(this, runnerOffset,
                                          null, Thread.currentThread()))
             return;
         try {
-            Callable<V> c = callable;
+            Callable<V> c = callable;//RunnableAdapter
             if (c != null && state == NEW) {
                 V result;
                 boolean ran;

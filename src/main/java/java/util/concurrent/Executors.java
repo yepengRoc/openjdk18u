@@ -651,6 +651,7 @@ public class Executors {
     }
 
     /**
+     * 一个包装器类，仅提供ExecutorService实现的ExecutorService方法
      * A wrapper class that exposes only the ExecutorService methods
      * of an ExecutorService implementation.
      */

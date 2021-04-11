@@ -367,6 +367,10 @@ class Thread implements Runnable {
                 acc != null ? acc : AccessController.getContext();
         this.target = target;
         setPriority(priority);
+        /**
+         * 从父线程中 拷贝 信息 TODO
+         * 放入当前线程
+         */
         if (inheritThreadLocals && parent.inheritableThreadLocals != null)
             this.inheritableThreadLocals =
                 ThreadLocal.createInheritedMap(parent.inheritableThreadLocals);
@@ -648,6 +652,7 @@ class Thread implements Runnable {
      * @see        #run()
      * @see        #stop()
      */
+    //一个线程的start方法不能多次调用
     public synchronized void start() {
         /**
          * This method is not invoked for the main method thread or "system"

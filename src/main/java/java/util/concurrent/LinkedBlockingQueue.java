@@ -438,12 +438,18 @@ public class LinkedBlockingQueue<E> extends AbstractQueue<E>
         final ReentrantLock takeLock = this.takeLock;
         takeLock.lockInterruptibly();
         try {
+            /**
+             * 拿数据的时候，没有就阻塞
+             */
             while (count.get() == 0) {
                 notEmpty.await();
             }
+            /**
+             * 有数据或者被唤醒
+             */
             x = dequeue();
-            c = count.getAndDecrement();
-            if (c > 1)
+            c = count.getAndDecrement();//返回当前值，并将未减1之前的值返回
+            if (c > 1)//说明队列中的元素 至少是2.已经出队了一个 。还大于1
                 notEmpty.signal();
         } finally {
             takeLock.unlock();

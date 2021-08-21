@@ -663,6 +663,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Must fit in 32 - RESIZE_STAMP_BITS bits.
      * 2的32次方 减1 最大扩容数量
      * 可以帮助调整大小的最大线程数。必须符合32-RESIZE_STAMP_BITS位。
+     * 2的 16次方 -1
      */
     private static final int MAX_RESIZERS = (1 << (32 - RESIZE_STAMP_BITS)) - 1;
 
@@ -677,7 +678,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
      * Encodings for Node hash fields. See above for explanation.
      */
     static final int MOVED     = -1; // hash for forwarding nodes  用于转发节点的hash
-    static final int TREEBIN   = -2; // hash for roots of trees -2是true 为树的根
+    static final int TREEBIN   = -2; // hash for roots of trees -2是tree 为树的根
     static final int RESERVED  = -3; // hash for transient reservations 暂时保留
     static final int HASH_BITS = 0x7fffffff; // usable bits of normal node hash
 
@@ -1140,7 +1141,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                              new Node<K,V>(hash, key, value, null)))
                     break;                   // no lock when adding to empty bin
             }
-            else if ((fh = f.hash) == MOVED)//如果当前位置的元素的hash = -1。说明正在扩容。这是一个标识位
+            else if ((fh = f.hash) == MOVED)//如果当前位置的元素的hash = -1。说明正在扩容。这是一个标识位 forwardnode的hash是
+            /**
+             * 协助元素转移 TODO
+             */
                 tab = helpTransfer(tab, f);
             else {//也没有cas成功，也没有在扩容。这个时候当前桶的位置已经有值了，用当前桶的元素作为锁
                 V oldVal = null;
@@ -1188,6 +1192,9 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                 }
             }
         }
+        /**
+         * 总数量加1
+         */
         addCount(1L, binCount);//
         return null;
     }
@@ -2439,7 +2446,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
              */
             while (s >= (long)(sc = sizeCtl) && (tab = table) != null &&
                    (n = tab.length) < MAXIMUM_CAPACITY) {
-                int rs = resizeStamp(n);
+                int rs = resizeStamp(n);// 记录的是扩容戳
                 if (sc < 0) {//正在扩容或初始化。则sc 为nul -1标识初始化，小于-1，则表示正在扩容
                     /**
                      * 右移16位 。说明高位存储的是 rs
@@ -2450,7 +2457,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                         break;
                     if (U.compareAndSwapInt(this, SIZECTL, sc, sc + 1))
                         transfer(tab, nt);
-                }
+                }//扩容第一次是执行这一步   左移 16 位 在低位 加2
                 else if (U.compareAndSwapInt(this, SIZECTL, sc,
                         /**
                          * sizectl 为 1线程数
@@ -2562,23 +2569,28 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
         for (int i = 0, bound = 0;;) {
             Node<K,V> f; int fh;
             while (advance) {//通过 advance 变量控制来计算 bound 和 advance的值
+                /**
+                 * 从数组的最后 开始迁移
+                 */
                 int nextIndex, nextBound;
-                if (--i >= bound || finishing)
+                if (--i >= bound || finishing)//第二次 满足这个条件
                     advance = false;
-                else if ((nextIndex = transferIndex) <= 0) {
+                else if ((nextIndex = transferIndex) <= 0) {//赋值老数组长度
                     i = -1;
                     advance = false;
-                }
+                }//第一次走到这里 。 这里 nextIndex 为0  stride = 16 所以这里 nextBound=0 transferIndex=0
                 else if (U.compareAndSwapInt
                          (this, TRANSFERINDEX, nextIndex,
                           nextBound = (nextIndex > stride ?
                                        nextIndex - stride : 0))) {
                     bound = nextBound;
+                    //第一次 nextIndex = 0 -1后小于0
+                    //老数组长度减1
                     i = nextIndex - 1;//大于 数组长度则，设置重试的次数。等于数组长度，并发度够，不用。从数组最后一个位置开始扩容
                     advance = false;
                 }
             }
-            if (i < 0 || i >= n || i + n >= nextn) {
+            if (i < 0 || i >= n || i + n >= nextn) {//条件不满足
                 int sc;
                 if (finishing) {//已完成节点复制
                     nextTable = null;
@@ -2667,7 +2679,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
                                 (lc != 0) ? new TreeBin<K,V>(hi) : t;
                             setTabAt(nextTab, i, ln);
                             setTabAt(nextTab, i + n, hn);
-                            setTabAt(tab, i, fwd);
+                            setTabAt(tab, i, fwd);//设置一个forwardnode
                             advance = true;
                         }
                     }
